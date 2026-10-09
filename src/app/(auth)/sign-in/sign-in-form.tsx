@@ -10,7 +10,7 @@ import { signInWithEmailAction, signInWithGoogleAction } from "@/lib/auth/action
 const AUTH_ERRORS: Record<string, string> = {
   OAuthAccountNotLinked: "That email is already linked to a different sign-in method. Use the original method.",
   Verification: "That sign-in link has expired or was already used. Request a new one.",
-  AccessDenied: "Access was denied.",
+  AccessDenied: "This Jobsmith is private. Sign in with an approved email address, or ask the owner for access.",
 };
 
 export function SignInForm({
