@@ -13,7 +13,7 @@ job tracker → interview prep → job search.
 ## Milestones (build in order; do not start the next until told)
 0. Foundation — scaffold, auth, DB schema, storage + LLM interfaces, env example, app shell, design tokens, this file. **DONE**
 1. Master resume — upload, parse, review/correct, guided Q&A, profile questions, role insights. **DONE (see status)**
-2. Tailoring — job link/paste ingestion, tailored resume + change list + match score, side-by-side editor, PDF/DOCX export.
+2. Tailoring — job link/paste ingestion, tailored resume + change list + match score, side-by-side editor, PDF/DOCX export. **DONE**
 3. Job tracker — Saved/Applied/Screening/Interview/Offer/Rejected, resume version per card, status prompts, reminders.
 4. Interview prep — technical/behavioural/system-design questions, practice mode with feedback, company brief.
 5. Job search — job APIs/aggregators, remote boards, pasted links; filters (country, remote/relocation, visa); fit score; one-click tailor/save. **Never scrape sites that forbid it.**
@@ -59,6 +59,10 @@ src/lib/auth/               auth.ts config, getCurrentUser() DAL
 src/lib/storage/            ObjectStorage interface, r2 + local drivers, keys
 src/lib/llm/                provider-agnostic interface (generateObject/generateText) — the ONLY place importing @ai-sdk/*
 src/lib/resume/             Zod schema for structured resume, text extraction, parsing, Q&A generation, role insights
+src/lib/jobs/               SSRF-safe URL fetch (net.ts), robots.txt, HTML/JSON-LD extraction, ingest (link or paste), LLM job parse
+src/lib/tailor/             typed changes (changes.ts), fact check (factcheck.ts), validation (materialize.ts), LLM verifier (verify.ts),
+                            engine (engine.ts), score, gap questions, manual-edit guard (guard.ts), repo (versions; frozen = immutable)
+src/lib/export/             one neutral doc model (model.ts) → PDF (pdfkit) and DOCX (docx); UK/EU CV vs US resume; cached by content hash
 src/lib/profile/            profile Zod schema
 src/lib/rate-limit.ts, log.ts, env.ts
 src/components/ui/          shadcn primitives
@@ -66,6 +70,21 @@ src/components/             app components
 tests/                      vitest
 drizzle/                    SQL migrations
 ```
+
+## How tailoring stays truthful (M2) — defence in depth, don't weaken any layer
+1. Prompt forbids invention; the model may only propose typed ops (reword bullet, reorder bullets/skills, add a skill ALREADY
+   evidenced elsewhere in the resume, summary, headline). It cannot add roles, bullets, dates, employers or degrees.
+2. `materialize.ts` validates every op against the master and runs `factCheck`: numbers must exist in the master, job keywords
+   (including single words inside multi-word keywords) must be evidenced, proper nouns/tech terms must be evidenced. Whole-token
+   matching with light stemming ("Java" ≠ "JavaScript"; "mentoring" ≈ "mentored").
+3. `verify.ts`: an independent strict LLM reviewer rejects soft embellishment ("improving…", "maintained", "high-throughput"). Fails closed.
+4. One bounded repair pass re-asks for faithful replacements for rejected edits; replacements go through layers 2–3 again.
+5. Gaps never become content: they become questions; an answer becomes a proposed edit to the MASTER resume the user must accept.
+6. Manual edits pass `guard.ts`: wording may change; facts (employers, titles, dates, new bullets, new skills) may not.
+7. Every change is materialised (before/after), shown with a reason and a diff, accepted/rejected individually, stale-detected if the
+   user edits the same text, and reversible. Exporting freezes a version; later edits create a new version.
+Outbound fetches of user-supplied URLs go only through `jobs/net.ts` (SSRF guard, size/time caps, robots.txt, refuses LinkedIn/Indeed/
+Glassdoor). A link that can't be read always falls back to the paste box.
 
 ## Conventions
 - Server-only modules start with `import "server-only"`. Authorize in every server action / route handler via
@@ -85,4 +104,5 @@ Without LLM keys the app runs but parsing/insights show a clear "AI not configur
 
 ## Status log
 - M0: complete (2026-10-09).
+- M2: complete (2026-10-09). Verified against a real OpenAI key (gpt-4.1); PDF/DOCX text round-trips in tests.
 - M1: complete (2026-10-09). Stubbed or unverified items are listed in the end-of-milestone summary; update this line as they land.

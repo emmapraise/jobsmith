@@ -16,6 +16,27 @@ async function main() {
   const models = process.argv.slice(2).length ? process.argv.slice(2) : [e.LLM_MODEL ?? PROVIDER_INFO[e.LLM_PROVIDER].defaultModel];
   const text = await extractResumeText(new Uint8Array(readFileSync("tests/fixtures/sample-resume.pdf")), "pdf");
 
+  if (process.env.TAILOR) {
+    const { parseJob } = await import("../src/lib/jobs/parse");
+    const { generateTailoring } = await import("../src/lib/tailor/engine");
+    const cfg = { provider: e.LLM_PROVIDER, model: models[0], apiKey };
+    const content = await parseResumeText(text, cfg);
+    const jobText = readFileSync("tests/fixtures/sample-job.txt", "utf8");
+    let t = Date.now();
+    const job = await parseJob(jobText, cfg);
+    console.log(`JOB (${((Date.now() - t) / 1000).toFixed(1)}s): ${job.title} @ ${job.company}, ${job.location}, ${job.workMode}, visa=${job.visaSponsorship}`);
+    console.log("  requirements:", job.requirements.map((r) => `${r.id}[${r.importance}] ${r.text}`).join(" | "));
+    console.log("  keywords:", job.keywords.join(", "));
+    t = Date.now();
+    const r = await generateTailoring(content, job, cfg);
+    console.log(`TAILORING (${((Date.now() - t) / 1000).toFixed(1)}s): score=${r.score} kept=${r.changes.length} dropped=${r.dropped.length}`);
+    for (const c of r.changes) console.log(`  + ${c.kind}: ${"after" in c ? JSON.stringify(c.after) : JSON.stringify((c as { items?: string[] }).items)} — ${c.reason}`);
+    for (const d of r.dropped) console.log(`  - DROPPED ${d.op}: ${d.why}`);
+    console.log("COVERAGE:", r.analysis.coverage.map((c) => `${c.requirementId}:${c.status}`).join(" "));
+    console.log("KEYWORDS missing in master:", r.analysis.keywords.missing.join(", "));
+    for (const g of r.gaps) console.log(`  ? [${g.importance}] ${g.requirement} → ${g.question}`);
+    process.exit(0);
+  }
   if (process.env.FULL) {
     const { generateQuestions, proposeChanges } = await import("../src/lib/resume/qa");
     const cfg = { provider: e.LLM_PROVIDER, model: models[0], apiKey };

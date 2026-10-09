@@ -17,6 +17,8 @@ import {
 } from "@/lib/resume/qa-repo";
 import { addVersion, getLatestOriginal, getMasterResume, getVersionContent, markReviewed, sameContent } from "@/lib/resume/repo";
 import { resumeContentSchema } from "@/lib/resume/schema";
+import { exportToUrl, type ExportFormat } from "@/lib/export/service";
+import type { Variant } from "@/lib/export/model";
 import { storage } from "@/lib/storage";
 
 /* ───────────── Review & correct ───────────── */
@@ -159,3 +161,19 @@ export async function abandonQaAction(qaId: string): Promise<ActionResult> {
   }
 }
 
+
+/** Download the master resume itself as PDF or DOCX (UK/EU CV or US resume). */
+export async function exportMasterAction(format: ExportFormat, variant: Variant): Promise<ActionResult<{ url: string; fileName: string }>> {
+  try {
+    const user = await requireUser();
+    if (format !== "pdf" && format !== "docx") return fail("Unknown format.");
+    const limited = await limitOrFail(user.id, ["export"]);
+    if (limited) return limited;
+    const master = await getMasterResume(user.id);
+    if (!master) return fail("Upload a resume first.", "no_resume");
+    const out = await exportToUrl({ userId: user.id, ownerId: master.id, content: master.content, variant: variant === "us" ? "us" : "uk_eu", format });
+    return { ok: true, url: out.url, fileName: out.fileName };
+  } catch (err) {
+    return actionError(err);
+  }
+}

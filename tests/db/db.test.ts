@@ -153,3 +153,51 @@ describe("account deletion", () => {
     expect(await db().select().from(tables.users).where(eq(tables.users.id, U))).toHaveLength(0);
   });
 });
+
+import { addTailoredVersion, createTailored, deleteTailored, freezeCurrent, getTailored, listTailored, mutateWorking } from "@/lib/tailor/repo";
+
+describe("tailored resumes", () => {
+  const parsed = {
+    title: "Backend Engineer", company: "Globex", location: "London", workMode: "hybrid" as const, seniority: "senior" as const, visaSponsorship: "offered" as const, summary: "",
+    keywords: ["Node.js"], responsibilities: [], requirements: [{ id: "r1", text: "Node.js", importance: "must" as const, category: "skill" as const }],
+  };
+
+  it("creates, mutates in place while open, versions when frozen, scopes by user, and cascades on delete", async () => {
+    const m = (await getMasterResume(A))!;
+    const id = await createTailored({
+      userId: A, masterResumeId: m.id, masterVersion: m.version, variant: "uk_eu", job: { source: "pasted_text", url: null, text: "job text", parsed },
+      content: m.content, changes: [], gaps: [], analysis: { coverage: [], keywords: { total: 1, master: [], missing: ["Node.js"] } }, matchScore: 40,
+    });
+
+    const v1 = (await getTailored(A, id))!;
+    expect(v1).toMatchObject({ version: 1, frozen: false, matchScore: 40, variant: "uk_eu" });
+    expect(v1.job).toMatchObject({ title: "Backend Engineer", company: "Globex" });
+    expect((await listTailored(A)).map((x) => x.id)).toContain(id);
+
+    // open version: edits happen in place
+    await mutateWorking(A, id, (w) => ({ ...w, content: { ...w.content, summary: "edit 1" } }));
+    expect(await getTailored(A, id)).toMatchObject({ version: 1 });
+
+    // frozen version: next edit creates version 2 and leaves v1 untouched
+    await freezeCurrent(A, id);
+    await mutateWorking(A, id, (w) => ({ ...w, content: { ...w.content, summary: "edit 2" } }));
+    const v2 = (await getTailored(A, id))!;
+    expect(v2).toMatchObject({ version: 2, frozen: false });
+    expect(v2.content.summary).toBe("edit 2");
+    const [old] = await db().select().from(tables.tailoredResumeVersions).where(eq(tables.tailoredResumeVersions.tailoredResumeId, id)).orderBy(tables.tailoredResumeVersions.version);
+    expect((old.content as ResumeContent).summary).toBe("edit 1");
+    expect(old.frozenAt).not.toBeNull();
+
+    expect(await addTailoredVersion(A, id, { masterVersion: m.version, content: m.content, changes: [], gaps: [], analysis: { coverage: [], keywords: { total: 0, master: [], missing: [] } }, matchScore: 50 })).toBe(3);
+
+    // isolation
+    expect(await getTailored(B, id)).toBeNull();
+    expect(await mutateWorking(B, id, (w) => w)).toBeNull();
+    await deleteTailored(B, id);
+    expect(await getTailored(A, id)).not.toBeNull();
+
+    await deleteTailored(A, id);
+    expect(await getTailored(A, id)).toBeNull();
+    expect(await db().select().from(tables.tailoredResumeVersions).where(eq(tables.tailoredResumeVersions.tailoredResumeId, id))).toHaveLength(0);
+  });
+});

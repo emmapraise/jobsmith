@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, FileText, Home, Settings, UserRound, type LucideIcon } from "lucide-react";
+import { Compass, FileText, Home, Settings, Sparkles, UserRound, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Item = { href: string; label: string; icon: LucideIcon };
@@ -12,6 +12,7 @@ export const NAV: Item[] = [
   { href: "/resume", label: "Resume", icon: FileText },
   { href: "/profile", label: "Profile", icon: UserRound },
   { href: "/roles", label: "Roles", icon: Compass },
+  { href: "/tailor", label: "Tailor", icon: Sparkles },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

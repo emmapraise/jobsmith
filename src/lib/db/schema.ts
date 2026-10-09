@@ -202,6 +202,8 @@ export const tailoredResumes = pgTable(
     jobId: uuid("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
     masterResumeId: uuid("master_resume_id").notNull().references(() => resumes.id, { onDelete: "cascade" }),
     currentVersion: integer("current_version").notNull().default(0),
+    /** Export template family: "uk_eu" (A4 CV) or "us" (Letter resume). */
+    variant: text("variant").notNull().default("uk_eu"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -222,6 +224,10 @@ export const tailoredResumeVersions = pgTable(
     /** Gaps: things the job asks for that are not in the profile. Become questions, never invented. */
     gaps: jsonb("gaps").notNull().default([]),
     matchScore: integer("match_score"),
+    /** Requirement coverage and keyword stats (see tailor/types.ts Analysis). */
+    analysis: jsonb("analysis").notNull().default({}),
+    /** Set when exported or linked to an application. A frozen version is immutable: edits create a new version. */
+    frozenAt: timestamp("frozen_at", { withTimezone: true, mode: "date" }),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("tailored_versions_unique").on(t.tailoredResumeId, t.version)],

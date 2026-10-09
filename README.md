@@ -28,3 +28,5 @@ npm run dev                                     # http://localhost:3000
 | `npm run dev` / `build` / `start` | Next.js |
 | `npm run typecheck` · `lint` · `test` | Quality gates (tests use the `jobsmith_test` database) |
 | `npm run db:generate` · `db:migrate` | Drizzle migrations |
+| `npm run llm:check` | Run the real parser against your configured provider (`TAILOR=1` / `FULL=1` for tailoring / Q&A) |
+| `npm run tailor:e2e` | Full tailoring + PDF/DOCX export for the dev user (`NOACCEPT=1` leaves suggestions pending) |

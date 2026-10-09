@@ -6,7 +6,7 @@ import type { CurrentUser } from "@/lib/auth/session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav, SidebarNav } from "./nav";
 
-const SOON = ["Tailor to a job", "Application tracker", "Interview prep", "Job search"];
+const SOON = ["Application tracker", "Interview prep", "Job search"];
 
 export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
   return (

@@ -1,0 +1,25 @@
+Senior Backend Engineer, Payments Platform
+Globex Financial — London, UK (Hybrid, 2 days in office). Visa sponsorship available for the right candidate.
+
+About the role
+You will design and run the APIs that power card and bank payments for millions of customers. You'll work in a small platform team, own services end to end, and help raise engineering standards across the company.
+
+What you'll do
+- Build and operate high-throughput REST APIs and event-driven services
+- Improve reliability, latency and observability of payment flows
+- Design data models and optimise queries in PostgreSQL
+- Mentor mid-level engineers and review code
+- Run services on Kubernetes and manage infrastructure with Terraform
+
+What we're looking for
+- 5+ years of backend engineering experience, ideally in payments or fintech
+- Strong Node.js and TypeScript
+- Deep experience with PostgreSQL and performance tuning
+- Production experience with Kubernetes and AWS
+- Experience designing REST APIs and microservices
+- Excellent communication and a track record of mentoring others
+
+Nice to have
+- Experience with Terraform or other infrastructure-as-code
+- Knowledge of PCI-DSS and secure payment handling
+- Experience with Kafka or other message queues

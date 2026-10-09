@@ -7,6 +7,7 @@ import { getProfile } from "@/lib/profile/repo";
 import { getLatestInsights } from "@/lib/resume/insights";
 import { getOpenQa, lastCompletedQaAt } from "@/lib/resume/qa-repo";
 import { getMasterResume } from "@/lib/resume/repo";
+import { listTailored } from "@/lib/tailor/repo";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Home" };
@@ -22,6 +23,7 @@ export default async function DashboardPage() {
     lastCompletedQaAt(user.id),
   ]);
   const insights = master ? await getLatestInsights(master.id) : null;
+  const tailored = await listTailored(user.id, 1);
 
   const steps: Step[] = [
     {
@@ -65,6 +67,14 @@ export default async function DashboardPage() {
       cta: insights ? "View roles" : "Find my roles",
       done: Boolean(insights),
     },
+    {
+      key: "tailor",
+      title: "Tailor your resume to a job",
+      body: "Paste a job link or description. Review every suggested edit and download a PDF or DOCX.",
+      href: "/tailor",
+      cta: "Tailor to a job",
+      done: tailored.length > 0,
+    },
   ];
 
   const next = steps.find((s) => !s.done);
@@ -93,7 +103,7 @@ export default async function DashboardPage() {
         <section className="rounded-2xl border border-success/20 bg-success-soft p-6 sm:p-8">
           <h2 className="text-title text-ink">You’re set up</h2>
           <p className="mt-2 max-w-xl text-ink-muted">
-            Your master resume and profile are in place. Next up: paste a job and let Jobsmith tailor your resume to it.
+            Your master resume, profile and first tailored resume are in place. Tracking applications comes next.
           </p>
         </section>
       )}

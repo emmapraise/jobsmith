@@ -11,6 +11,7 @@ export const POLICIES = {
   upload: { limit: 10, windowSeconds: 60 * 60 } satisfies Policy, // 10 uploads / hour
   ai: { limit: 60, windowSeconds: 60 * 60 } satisfies Policy, // 60 AI calls / hour
   aiBurst: { limit: 8, windowSeconds: 60 } satisfies Policy, // 8 / minute
+  export: { limit: 40, windowSeconds: 60 * 60 } satisfies Policy,
   signIn: { limit: 10, windowSeconds: 15 * 60 } satisfies Policy,
 } as const;
 

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { UploadResume } from "@/components/resume/upload-resume";
 import { ReplaceUpload } from "@/components/resume/replace-upload";
 import { VersionHistory } from "@/components/resume/version-history";
+import { ExportMaster } from "@/components/resume/export-master";
 import { OriginalDownload } from "@/components/resume/original-download";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/session";
@@ -111,6 +112,10 @@ export default async function ResumePage() {
               {master.sourceFileName && <OriginalDownload />}
               <ReplaceUpload />
             </div>
+          </div>
+          <div>
+            <h2 className="text-xl text-ink">Export</h2>
+            <ExportMaster />
           </div>
           <div>
             <h2 className="text-xl text-ink">Version history</h2>
