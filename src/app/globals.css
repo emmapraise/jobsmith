@@ -1,26 +1,215 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Light-only for now: `dark:` utilities apply only under a .dark ancestor, never from the OS setting. */
+@custom-variant dark (&:is(.dark *));
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Jobsmith design tokens — defined ONCE here. Components use the utilities
+   (bg-paper, text-ink, text-ink-muted, border-line, bg-brand, bg-change-soft …)
+   and never hard-coded colours.
+
+   Feel: calm, professional, high-trust. Warm paper, slate ink, deep teal brand.
+   Amber is reserved for "changed by AI / needs your attention".
+   Contrast (WCAG AA): ink on paper ≈ 14:1, ink-muted on paper ≈ 7:1,
+   brand-fg on brand ≈ 9:1, change-ink on change-soft ≈ 8:1.
+   ════════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --paper: oklch(0.982 0.007 85);
+  --surface: oklch(0.999 0.003 85);
+  --surface-sunken: oklch(0.955 0.009 85);
+  --line: oklch(0.905 0.012 85);
+  --line-strong: oklch(0.82 0.015 85);
+
+  /* Text */
+  --ink: oklch(0.235 0.03 255);
+  --ink-muted: oklch(0.44 0.025 255);
+  --ink-faint: oklch(0.56 0.02 255); /* large text / icons only */
+
+  /* Brand (deep teal) */
+  --brand: oklch(0.43 0.085 195);
+  --brand-hover: oklch(0.37 0.08 195);
+  --brand-fg: oklch(0.99 0.005 195);
+  --brand-soft: oklch(0.953 0.03 195);
+  --brand-soft-ink: oklch(0.34 0.075 195);
+
+  /* "Changed by AI" / attention (amber) */
+  --change-soft: oklch(0.957 0.065 92);
+  --change-line: oklch(0.86 0.1 88);
+  --change-ink: oklch(0.38 0.08 65);
+
+  /* Status */
+  --success: oklch(0.44 0.1 155);
+  --success-soft: oklch(0.95 0.045 155);
+  --danger: oklch(0.5 0.19 27);
+  --danger-soft: oklch(0.96 0.03 27);
+
+  /* Geometry + elevation */
+  --radius: 0.75rem;
+  --shadow-card: 0 1px 2px oklch(0.25 0.03 255 / 0.05), 0 1px 1px oklch(0.25 0.03 255 / 0.03);
+  --shadow-pop: 0 8px 28px oklch(0.25 0.03 255 / 0.12), 0 2px 6px oklch(0.25 0.03 255 / 0.06);
+
+  /* Layout rhythm */
+  --gutter: 1rem; /* mobile side gutter */
+  --measure: 68ch; /* comfortable reading width */
+  --content-max: 72rem;
+
+  /* shadcn/ui variable mapping → our tokens */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-fg);
+  --secondary: var(--surface-sunken);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-sunken);
+  --muted-foreground: var(--ink-muted);
+  --accent: var(--brand-soft);
+  --accent-foreground: var(--brand-soft-ink);
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--brand);
+  --chart-1: var(--brand);
+  --chart-2: oklch(0.6 0.1 195);
+  --chart-3: oklch(0.7 0.1 90);
+  --chart-4: oklch(0.55 0.1 155);
+  --chart-5: var(--ink-muted);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-fg);
+  --sidebar-accent: var(--brand-soft);
+  --sidebar-accent-foreground: var(--brand-soft-ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--brand);
 }
 
 @theme inline {
+  /* Colour utilities */
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-soft-ink: var(--brand-soft-ink);
+  --color-change-soft: var(--change-soft);
+  --color-change-line: var(--change-line);
+  --color-change-ink: var(--change-ink);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  /* shadcn names */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Type */
+  --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-display);
+  --text-display: clamp(2.25rem, 1.6rem + 2.8vw, 3.75rem);
+  --text-display--line-height: 1.08;
+  --text-title: clamp(1.625rem, 1.3rem + 1.2vw, 2.25rem);
+  --text-title--line-height: 1.15;
+
+  /* Radius + shadows */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+
+  --breakpoint-3xl: 100rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-paper text-ink antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1, h2, h3 {
+    font-family: var(--font-heading);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  p { text-wrap: pretty; }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+  ::selection { background: var(--brand-soft); color: var(--brand-soft-ink); }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Page container: 16px gutter on phones, centred on desktop. */
+  .page { @apply mx-auto w-full max-w-[var(--content-max)] px-[var(--gutter)] sm:px-6 lg:px-10; }
+  .prose-measure { max-width: var(--measure); }
+  .eyebrow { @apply text-xs font-medium uppercase tracking-[0.12em] text-ink-muted; }
+  /* AI-changed content highlight */
+  .changed { @apply rounded-sm bg-change-soft px-0.5 text-change-ink shadow-[inset_0_-1px_0_var(--change-line)]; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

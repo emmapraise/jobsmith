@@ -1,0 +1,86 @@
+# Jobsmith — project guide for Claude
+
+Jobsmith is a **free** web app that helps software engineers, AI engineers and other tech people land jobs.
+The first user is the owner (Nigeria-based, targeting UK, Europe and remote roles). Build for real use, not as a demo.
+
+Flow: upload one **master resume** → parse to structured JSON → short Q&A + profile questions → role insights →
+paste a job link/description → tailored resume (with per-change reasons, accept/reject) → preview/edit → PDF/DOCX →
+job tracker → interview prep → job search.
+
+> **Next.js here is NOT the Next.js in your training data.** Read `node_modules/next/dist/docs/` before using an API
+> you are unsure of (see `AGENTS.md`). `middleware` is now `proxy.ts`; `params`/`searchParams`/`cookies()`/`headers()` are async.
+
+## Milestones (build in order; do not start the next until told)
+0. Foundation — scaffold, auth, DB schema, storage + LLM interfaces, env example, app shell, design tokens, this file. **DONE**
+1. Master resume — upload, parse, review/correct, guided Q&A, profile questions, role insights. **DONE (see status)**
+2. Tailoring — job link/paste ingestion, tailored resume + change list + match score, side-by-side editor, PDF/DOCX export.
+3. Job tracker — Saved/Applied/Screening/Interview/Offer/Rejected, resume version per card, status prompts, reminders.
+4. Interview prep — technical/behavioural/system-design questions, practice mode with feedback, company brief.
+5. Job search — job APIs/aggregators, remote boards, pasted links; filters (country, remote/relocation, visa); fit score; one-click tailor/save. **Never scrape sites that forbid it.**
+
+## Stack (decided — don't re-litigate)
+- Next.js (App Router) + TypeScript (strict), Tailwind v4, shadcn/ui (base-nova / Base UI primitives), lucide icons.
+- Postgres + Drizzle ORM (`postgres` driver). Migrations via `drizzle-kit` in `drizzle/`.
+- Auth.js v5 (`next-auth@beta`): Google + email magic link via Resend. **Database sessions** (required by the email provider).
+  With no `AUTH_RESEND_KEY` in non-production, the magic link is printed to the server console instead of emailed.
+- Storage: Cloudflare R2 via the S3 API behind `src/lib/storage` (interface `ObjectStorage`).
+  Buckets `jobsmith-uploads` (original resumes) and `jobsmith-exports` (PDF/DOCX, cached by content hash). Both private.
+  Signed URLs only, short-lived. Keys: `users/{userId}/resumes/{resumeId}/...`.
+  `STORAGE_DRIVER=local` is a dev-only filesystem driver (`.data/storage`, HMAC-signed URLs); production must use `r2`.
+- LLM: Vercel AI SDK behind `src/lib/llm`. Pick with `LLM_PROVIDER` (`anthropic|openai|google`) + `LLM_MODEL` + that
+  provider's key. **No provider-specific code outside `src/lib/llm`.** All structured outputs use Zod schemas.
+- Export (M2): PDF + DOCX, ATS-friendly, regional variants (UK/EU CV vs US resume).
+- Pricing: free. **No payments code.**
+- Next config: `cacheComponents` and `partialPrefetching` are deliberately **off** — the app is fully authenticated and
+  dynamic, so classic dynamic rendering avoids wrapping every session read in Suspense.
+
+## Non-negotiable rules
+1. **Truthfulness guard.** A tailored resume may only use facts in the master profile. Anything the job asks for that is
+   not in the profile is a **gap** and becomes a question to the user — never invented.
+2. **Every AI change is shown with a short reason**, and the user can accept or reject each one individually.
+3. **Privacy.** TLS everywhere (HSTS header set), **never log resume text** (use `src/lib/log.ts`, which refuses to log
+   free text fields; never `console.log` resume/profile/LLM payloads), never use user data for training, support full
+   account deletion = DB rows (cascade) + every object under `users/{userId}/` in **both** buckets.
+4. **Upload validation on the server**: PDF and DOCX only (check extension, MIME and magic bytes), 5 MB cap.
+5. **Rate limit** AI and upload endpoints (`src/lib/rate-limit.ts`, Postgres fixed-window).
+6. **Resume content is structured JSON in Postgres = source of truth.** Files are generated from it. Never store a
+   generated file as the only copy of an edit.
+
+## Layout
+```
+src/app/(marketing)/        public landing
+src/app/(auth)/             sign-in, verify
+src/app/(app)/              authenticated shell: dashboard, resume, profile, roles, settings
+src/app/api/                route handlers (auth, upload, files)
+src/lib/db/                 drizzle client + schema.ts
+src/lib/auth/               auth.ts config, getCurrentUser() DAL
+src/lib/storage/            ObjectStorage interface, r2 + local drivers, keys
+src/lib/llm/                provider-agnostic interface (generateObject/generateText) — the ONLY place importing @ai-sdk/*
+src/lib/resume/             Zod schema for structured resume, text extraction, parsing, Q&A generation, role insights
+src/lib/profile/            profile Zod schema
+src/lib/rate-limit.ts, log.ts, env.ts
+src/components/ui/          shadcn primitives
+src/components/             app components
+tests/                      vitest
+drizzle/                    SQL migrations
+```
+
+## Conventions
+- Server-only modules start with `import "server-only"`. Authorize in every server action / route handler via
+  `requireUser()` close to the data; always scope queries by `userId`.
+- Zod schemas are the contract: LLM output → Zod → DB JSON. Validate again when reading JSON from the DB at boundaries.
+- Resume item ids are stable (`crypto.randomUUID()`), so diffs/changes can reference them.
+- Env access only through `src/lib/env.ts` (validated). `.env.example` documents every variable.
+- Design tokens live **once** in `src/app/globals.css` (colour, type, spacing, radius, shadow). Components use token
+  utilities (`bg-surface`, `text-ink-muted`, `text-brand` …), never hard-coded hex values.
+- Every screen: loading (`loading.tsx` / skeleton), empty and error states. Mobile-first, keyboard accessible, WCAG AA.
+- Commands: `npm run dev`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run db:generate`, `npm run db:migrate`.
+  Run typecheck + lint + tests before finishing a milestone; commit with a clear message.
+
+## Local setup
+`createdb jobsmith && createdb jobsmith_test`, copy `.env.example` → `.env.local`, `npm run db:migrate`, `npm run dev`.
+Without LLM keys the app runs but parsing/insights show a clear "AI not configured" error state.
+
+## Status log
+- M0: complete (2026-10-09).
+- M1: complete (2026-10-09). Stubbed or unverified items are listed in the end-of-milestone summary; update this line as they land.

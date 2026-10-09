@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jobsmith
 
-## Getting Started
+Free web app that helps software engineers, AI engineers and other tech people land jobs: upload one master resume,
+see the roles you fit, tailor the resume to each job without inventing anything, track applications, prep for interviews.
 
-First, run the development server:
+Project rules, stack decisions and conventions live in **[CLAUDE.md](./CLAUDE.md)**. The milestone plan is in [docs/PLAN.md](./docs/PLAN.md).
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+createdb jobsmith && createdb jobsmith_test     # Postgres 15+
+cp .env.example .env.local                      # then fill AUTH_SECRET (openssl rand -base64 32)
+npm install
+npm run db:migrate
+npm run dev                                     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Sign-in without email/Google configured:** request a magic link on `/sign-in`; the link is printed in the server console (dev only).
+- **AI features** (resume parsing, Q&A, role insights) need `LLM_PROVIDER`, `LLM_MODEL` and that provider's API key in `.env.local`.
+  Without one, those screens show a clear "AI isn't set up yet" state.
+- **See every screen without an LLM key:** sign in once, then `npm run db:seed-dev -- you@example.com`.
+- **Storage:** `STORAGE_DRIVER=local` stores files in `.data/storage` (dev only). Production must use `r2` (see `.env.example`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| | |
+|---|---|
+| `npm run dev` / `build` / `start` | Next.js |
+| `npm run typecheck` · `lint` · `test` | Quality gates (tests use the `jobsmith_test` database) |
+| `npm run db:generate` · `db:migrate` | Drizzle migrations |

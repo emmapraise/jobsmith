@@ -1,0 +1,56 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1100 >>
+stream
+BT /F1 11 Tf 14 TL 50 780 Td
+(Ada Okafor) Tj T*
+(Senior Backend Engineer) Tj T*
+(ada.okafor@example.com | +234 800 000 0000 | Lagos, Nigeria) Tj T*
+(github.com/adaokafor) Tj T*
+() Tj T*
+(SUMMARY) Tj T*
+(Backend engineer with 7 years of experience building payment APIs and data pipelines in Node.js and Python.) Tj T*
+() Tj T*
+(EXPERIENCE) Tj T*
+(Senior Backend Engineer, Paystack-like Co, Lagos, Nigeria \(2021-03 - Present\)) Tj T*
+(- Built and maintained Node.js payment APIs serving 40,000 daily users.) Tj T*
+(- Reduced p95 latency of the settlement service from 900ms to 240ms.) Tj T*
+(- Mentored four junior engineers and led the migration to PostgreSQL 15.) Tj T*
+(Backend Engineer, DataWorks, Remote \(2018-06 - 2021-02\)) Tj T*
+(- Designed ETL pipelines in Python and Airflow processing 2TB per day.) Tj T*
+(- Wrote integration tests that cut production incidents by 30 percent.) Tj T*
+() Tj T*
+(EDUCATION) Tj T*
+(BSc Computer Science, University of Lagos \(2012 - 2016\)) Tj T*
+() Tj T*
+(SKILLS) Tj T*
+(Languages: TypeScript, Python, SQL, Go) Tj T*
+(Cloud: AWS, Docker, Terraform) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001393 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1463
+%%EOF
