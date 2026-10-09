@@ -48,7 +48,10 @@ export function UploadResume({ replacing = false, onCancel }: { replacing?: bool
       } catch {
         /* non-JSON error page */
       }
-      if (xhr.status >= 200 && xhr.status < 300 && body.ok) {
+      if (xhr.status === 413 && !body.message) {
+        // The hosting platform (not our validation) rejected the body: serverless request limit is ~4.5 MB.
+        setPhase({ name: "error", message: "That file is too large to upload. Try a smaller file (under 4.5 MB)." });
+      } else if (xhr.status >= 200 && xhr.status < 300 && body.ok) {
         router.push("/resume/review");
         router.refresh();
       } else {

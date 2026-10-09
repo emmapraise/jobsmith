@@ -82,3 +82,29 @@ describe("buildDigest", () => {
     expect(m.html).toContain("Dev &quot;Lead&quot;");
   });
 });
+
+import { isAllowedEmail } from "@/lib/auth/allowlist";
+
+describe("isAllowedEmail (ALLOWED_EMAILS)", () => {
+  it("allows everyone when unset or empty", () => {
+    expect(isAllowedEmail("a@b.co", undefined)).toBe(true);
+    expect(isAllowedEmail("a@b.co", "")).toBe(true);
+    expect(isAllowedEmail("a@b.co", " , ")).toBe(true);
+  });
+  it("matches exact emails and whole domains, case-insensitively", () => {
+    const list = "Me@Example.com, @team.io , *@corp.org";
+    expect(isAllowedEmail("me@example.com", list)).toBe(true);
+    expect(isAllowedEmail("ME@EXAMPLE.COM", list)).toBe(true);
+    expect(isAllowedEmail("anyone@team.io", list)).toBe(true);
+    expect(isAllowedEmail("x@corp.org", list)).toBe(true);
+  });
+  it("rejects everyone else, including look-alike domains and missing emails", () => {
+    const list = "me@example.com,@team.io";
+    expect(isAllowedEmail("other@example.com", list)).toBe(false);
+    expect(isAllowedEmail("x@evilteam.io", list)).toBe(false);
+    expect(isAllowedEmail("x@team.io.evil.com", list)).toBe(false);
+    expect(isAllowedEmail(null, list)).toBe(false);
+    expect(isAllowedEmail("", list)).toBe(false);
+    expect(isAllowedEmail("no-at-sign", list)).toBe(false);
+  });
+});

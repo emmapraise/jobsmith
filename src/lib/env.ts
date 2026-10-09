@@ -8,6 +8,10 @@ const schema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     DATABASE_URL: z.string().min(1),
+    // Direct (non-pooled) connection used only for migrations. Falls back to DATABASE_URL.
+    DATABASE_URL_UNPOOLED: opt(z.string().min(1)),
+    // Comma-separated emails or @domains allowed to sign in. Unset = anyone.
+    ALLOWED_EMAILS: opt(z.string()),
     AUTH_SECRET: z.string().min(16),
     AUTH_URL: opt(z.string().url()),
     AUTH_GOOGLE_ID: opt(z.string()),
@@ -38,6 +42,9 @@ const schema = z
   .superRefine((e, ctx) => {
     if (e.NODE_ENV === "production" && e.STORAGE_DRIVER !== "r2") {
       ctx.addIssue({ code: "custom", path: ["STORAGE_DRIVER"], message: "production requires STORAGE_DRIVER=r2" });
+    }
+    if (e.NODE_ENV === "production" && !e.AUTH_RESEND_KEY) {
+      ctx.addIssue({ code: "custom", path: ["AUTH_RESEND_KEY"], message: "production requires AUTH_RESEND_KEY (magic-link emails)" });
     }
     if (e.STORAGE_DRIVER === "r2") {
       for (const k of ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"] as const) {

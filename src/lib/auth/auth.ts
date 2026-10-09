@@ -6,6 +6,7 @@ import Resend from "next-auth/providers/resend";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db, tables } from "@/lib/db";
 import { env } from "@/lib/env";
+import { isAllowedEmail } from "./allowlist";
 
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -63,6 +64,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
   pages: { signIn: "/sign-in", verifyRequest: "/sign-in/check-email", error: "/sign-in" },
   trustHost: true,
   callbacks: {
+    // Runs for magic-link requests (before the email is sent) and for Google sign-ins.
+    signIn({ user }) {
+      return isAllowedEmail(user.email, env().ALLOWED_EMAILS);
+    },
     session({ session, user }) {
       session.user.id = user.id;
       return session;

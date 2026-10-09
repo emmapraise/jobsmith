@@ -14,7 +14,9 @@
     "db:studio": "drizzle-kit studio",
     "db:seed-dev": "tsx --conditions=react-server scripts/seed-dev.ts",
     "llm:check": "tsx --conditions=react-server scripts/llm-check.ts",
-    "tailor:e2e": "tsx --conditions=react-server scripts/tailor-e2e.ts"
+    "tailor:e2e": "tsx --conditions=react-server scripts/tailor-e2e.ts",
+    "vercel-build": "tsx scripts/migrate.ts && next build",
+    "env:check": "tsx --conditions=react-server scripts/check-env.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.78",
@@ -61,5 +63,8 @@
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -8,7 +8,13 @@ const globalForDb = globalThis as unknown as { __pg?: ReturnType<typeof postgres
 
 function client() {
   if (!globalForDb.__pg) {
-    globalForDb.__pg = postgres(env().DATABASE_URL, { max: 10, prepare: false });
+    globalForDb.__pg = postgres(env().DATABASE_URL, {
+      // Serverless: many short-lived instances share one pooler, so keep each instance's pool small.
+      max: env().NODE_ENV === "production" ? 3 : 10,
+      prepare: false, // required behind PgBouncer-style poolers (Neon's pooled endpoint)
+      idle_timeout: 20,
+      connect_timeout: 15,
+    });
   }
   return globalForDb.__pg;
 }

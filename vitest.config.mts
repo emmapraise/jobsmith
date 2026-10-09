@@ -16,7 +16,7 @@ export default defineConfig({
     // Integration tests run against a separate database and a throwaway storage dir.
     env: {
       NODE_ENV: "test",
-      DATABASE_URL: "postgres://localhost:5432/jobsmith_test",
+      DATABASE_URL: process.env.TEST_DATABASE_URL ?? "postgres://localhost:5432/jobsmith_test",
       AUTH_SECRET: "test-secret-test-secret-test-secret",
       STORAGE_DRIVER: "local",
       CRON_SECRET: "test-cron-secret-0123456789",

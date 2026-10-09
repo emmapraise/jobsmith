@@ -21,12 +21,17 @@ npm run dev                                     # http://localhost:3000
 - **See every screen without an LLM key:** sign in once, then `npm run db:seed-dev -- you@example.com`.
 - **Storage:** `STORAGE_DRIVER=local` stores files in `.data/storage` (dev only). Production must use `r2` (see `.env.example`).
 
+## Deploying
+
+See **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** (Vercel + Neon + Cloudflare R2 + Resend), and `.env.production.example` for every production variable.
+
 ## Scripts
 
 | | |
 |---|---|
 | `npm run dev` / `build` / `start` | Next.js |
 | `npm run typecheck` · `lint` · `test` | Quality gates (tests use the `jobsmith_test` database) |
+| `npm run env:check -- <file> [--prod]` | Validate an env file against the app's schema (prints no values) |
 | `npm run db:generate` · `db:migrate` | Drizzle migrations |
 | `npm run llm:check` | Run the real parser against your configured provider (`TAILOR=1` / `FULL=1` for tailoring / Q&A) |
 | `npm run tailor:e2e` | Full tailoring + PDF/DOCX export for the dev user (`NOACCEPT=1` leaves suggestions pending) |
