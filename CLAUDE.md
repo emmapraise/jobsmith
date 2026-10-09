@@ -14,7 +14,7 @@ job tracker → interview prep → job search.
 0. Foundation — scaffold, auth, DB schema, storage + LLM interfaces, env example, app shell, design tokens, this file. **DONE**
 1. Master resume — upload, parse, review/correct, guided Q&A, profile questions, role insights. **DONE (see status)**
 2. Tailoring — job link/paste ingestion, tailored resume + change list + match score, side-by-side editor, PDF/DOCX export. **DONE**
-3. Job tracker — Saved/Applied/Screening/Interview/Offer/Rejected, resume version per card, status prompts, reminders.
+3. Job tracker — Saved/Applied/Screening/Interview/Offer/Rejected, resume version per card, status prompts, reminders. **DONE**
 4. Interview prep — technical/behavioural/system-design questions, practice mode with feedback, company brief.
 5. Job search — job APIs/aggregators, remote boards, pasted links; filters (country, remote/relocation, visa); fit score; one-click tailor/save. **Never scrape sites that forbid it.**
 
@@ -62,6 +62,7 @@ src/lib/resume/             Zod schema for structured resume, text extraction, p
 src/lib/jobs/               SSRF-safe URL fetch (net.ts), robots.txt, HTML/JSON-LD extraction, ingest (link or paste), LLM job parse
 src/lib/tailor/             typed changes (changes.ts), fact check (factcheck.ts), validation (materialize.ts), LLM verifier (verify.ts),
                             engine (engine.ts), score, gap questions, manual-edit guard (guard.ts), repo (versions; frozen = immutable)
+src/lib/tracker/            stage rules (stages.ts), what's due (due.ts), repo (applications + events), opt-in email digest (digest.ts, reminders.ts)
 src/lib/export/             one neutral doc model (model.ts) → PDF (pdfkit) and DOCX (docx); UK/EU CV vs US resume; cached by content hash
 src/lib/profile/            profile Zod schema
 src/lib/rate-limit.ts, log.ts, env.ts
@@ -86,6 +87,17 @@ drizzle/                    SQL migrations
 Outbound fetches of user-supplied URLs go only through `jobs/net.ts` (SSRF guard, size/time caps, robots.txt, refuses LinkedIn/Indeed/
 Glassdoor). A link that can't be read always falls back to the paste box.
 
+## Tracker rules (M3)
+- An application PINS the exact resume version used: tracking a tailored resume freezes its current version (`applications.tailored_resume_version_id`)
+  or records the master version (`resume_version_id`). Later edits create new versions; the application keeps the one that was sent, and the detail
+  page downloads exactly that version. Never repoint an application's version automatically.
+- One application per job per user (unique index). Moving stage writes an event, sets/clears the follow-up date (`stages.ts`), and resets prompts.
+- "Needs attention" = follow-up date arrived, or no stage change for N days (saved 7, applied 14, screening 10, interview 7), unless snoozed 7 days.
+  Offers/rejections are closed: no reminders. The same `dueApps()` feeds the tracker, dashboard, nav badge and email digest.
+- Email reminders are opt-in (Settings), at most one digest a day, sent by `/api/cron/reminders` (needs `CRON_SECRET` + any daily scheduler).
+  Digests contain only job titles/companies the user typed, never resume content.
+- Downloads must start from `lib/download.ts` (hidden link); never `window.location = downloadUrl` (breaks in Safari).
+
 ## Conventions
 - Server-only modules start with `import "server-only"`. Authorize in every server action / route handler via
   `requireUser()` close to the data; always scope queries by `userId`.
@@ -104,5 +116,6 @@ Without LLM keys the app runs but parsing/insights show a clear "AI not configur
 
 ## Status log
 - M0: complete (2026-10-09).
+- M3: complete (2026-10-09). Board + detail + prompts + opt-in email digest; verified in the browser and with DB integration tests.
 - M2: complete (2026-10-09). Verified against a real OpenAI key (gpt-4.1); PDF/DOCX text round-trips in tests.
 - M1: complete (2026-10-09). Stubbed or unverified items are listed in the end-of-milestone summary; update this line as they land.

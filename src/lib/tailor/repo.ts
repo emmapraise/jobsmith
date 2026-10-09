@@ -149,3 +149,16 @@ export async function deleteTailored(userId: string, id: string): Promise<void> 
   const [t] = await db().select({ jobId: tr.jobId }).from(tr).where(and(eq(tr.id, id), eq(tr.userId, userId))).limit(1);
   if (t) await db().delete(jobs).where(and(eq(jobs.id, t.jobId), eq(jobs.userId, userId))); // cascades to tailored rows
 }
+
+/** A specific stored version (used to download exactly what an application was sent with). */
+export async function getTailoredVersion(userId: string, id: string, version: number) {
+  const [row] = await db()
+    .select({ content: trv.content, variant: tr.variant, company: jobs.company, title: jobs.title, frozen: trv.frozenAt })
+    .from(trv)
+    .innerJoin(tr, eq(tr.id, trv.tailoredResumeId))
+    .innerJoin(jobs, eq(jobs.id, tr.jobId))
+    .where(and(eq(trv.tailoredResumeId, id), eq(trv.version, version), eq(tr.userId, userId)))
+    .limit(1);
+  if (!row) return null;
+  return { content: resumeContentSchema.parse(row.content), variant: (row.variant === "us" ? "us" : "uk_eu") as "uk_eu" | "us", company: row.company, title: row.title, frozen: Boolean(row.frozen) };
+}

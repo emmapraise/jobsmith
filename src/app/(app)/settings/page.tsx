@@ -1,18 +1,20 @@
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AiProviderSettings } from "@/components/settings/ai-provider";
+import { EmailReminders } from "@/components/settings/reminders";
 import { DeleteAccount } from "@/components/settings/delete-account";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/auth/actions";
 import { requireUser } from "@/lib/auth/session";
 import { getAiSettingsView } from "@/lib/llm/user-config";
+import { getEmailReminders } from "@/lib/tracker/reminders";
 
 export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const user = await requireUser();
-  const ai = await getAiSettingsView(user.id);
+  const [ai, reminders] = await Promise.all([getAiSettingsView(user.id), getEmailReminders(user.id)]);
   return (
     <div className="page max-w-3xl">
       <PageHeader eyebrow="Settings" title="Account & privacy" />
@@ -31,6 +33,11 @@ export default async function SettingsPage() {
           Choose which AI reads and rewrites your resume, and which model it uses. Use a key from this server, or add your own.
         </p>
         <AiProviderSettings view={{ provider: ai.provider, model: ai.model, providers: ai.providers }} />
+      </section>
+
+      <section aria-labelledby="notify" className="mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+        <h2 id="notify" className="mb-4 text-xl text-ink">Reminders</h2>
+        <EmailReminders initial={reminders} email={user.email} />
       </section>
 
       <section aria-labelledby="appearance" className="mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">

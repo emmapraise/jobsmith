@@ -18,6 +18,9 @@ const schema = z
     // Encrypts users' own API keys at rest. Falls back to AUTH_SECRET.
     APP_ENCRYPTION_KEY: opt(z.string().min(16)),
 
+    // Authorises the scheduled reminders endpoint (/api/cron/reminders). Unset = endpoint disabled.
+    CRON_SECRET: opt(z.string().min(16)),
+
     STORAGE_DRIVER: z.preprocess(blank, z.enum(["r2", "local"]).default("local")),
     R2_ACCOUNT_ID: opt(z.string()),
     R2_ACCESS_KEY_ID: opt(z.string()),

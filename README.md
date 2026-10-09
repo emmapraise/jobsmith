@@ -30,3 +30,12 @@ npm run dev                                     # http://localhost:3000
 | `npm run db:generate` · `db:migrate` | Drizzle migrations |
 | `npm run llm:check` | Run the real parser against your configured provider (`TAILOR=1` / `FULL=1` for tailoring / Q&A) |
 | `npm run tailor:e2e` | Full tailoring + PDF/DOCX export for the dev user (`NOACCEPT=1` leaves suggestions pending) |
+
+## Reminders
+
+Tracker reminders show in the app (badge, dashboard, tracker). Email digests are opt-in per user (Settings → Reminders). To send them, set
+`CRON_SECRET` and call the endpoint once a day from any scheduler:
+
+```bash
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" https://your-domain/api/cron/reminders
+```

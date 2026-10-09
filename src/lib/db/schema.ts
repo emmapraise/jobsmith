@@ -254,7 +254,13 @@ export const applications = pgTable(
     tailoredResumeVersionId: uuid("tailored_resume_version_id").references(() => tailoredResumeVersions.id, {
       onDelete: "set null",
     }),
+    /** Alternatively, the MASTER resume version used (when no tailored resume was made for this job). */
+    resumeVersionId: uuid("resume_version_id").references(() => resumeVersions.id, { onDelete: "set null" }),
     status: applicationStatus("status").notNull().default("saved"),
+    /** When the stage last changed; drives "any news?" prompts. */
+    statusChangedAt: timestamp("status_changed_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    /** "No news yet, ask me again later". */
+    snoozedUntil: timestamp("snoozed_until", { withTimezone: true, mode: "date" }),
     appliedAt: timestamp("applied_at", { withTimezone: true, mode: "date" }),
     nextFollowUpAt: timestamp("next_follow_up_at", { withTimezone: true, mode: "date" }),
     lastStatusPromptAt: timestamp("last_status_prompt_at", { withTimezone: true, mode: "date" }),
@@ -262,8 +268,16 @@ export const applications = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("applications_user_status_idx").on(t.userId, t.status)],
+  (t) => [index("applications_user_status_idx").on(t.userId, t.status), uniqueIndex("applications_user_job_unique").on(t.userId, t.jobId)],
 );
+
+/** Opt-in email reminders (digest of follow-ups and "any news?" prompts). Off by default. */
+export const notificationPrefs = pgTable("notification_prefs", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  emailReminders: boolean("email_reminders").notNull().default(false),
+  lastDigestAt: timestamp("last_digest_at", { withTimezone: true, mode: "date" }),
+  updatedAt: updatedAt(),
+});
 
 export const applicationEvents = pgTable("application_events", {
   id: uuid("id").primaryKey().defaultRandom(),

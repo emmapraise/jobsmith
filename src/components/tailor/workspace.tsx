@@ -17,6 +17,7 @@ import type { Analysis, Decision, Gap, TailorChange } from "@/lib/tailor/types";
 import { startDownload } from "@/lib/download";
 import { cn } from "@/lib/utils";
 import { ChangeCard } from "./change-card";
+import { TrackControl, type Tracked } from "./track-control";
 import { GapsPanel } from "./gaps-panel";
 import { ResumeDoc, type Marks } from "./resume-doc";
 
@@ -33,6 +34,7 @@ export type WorkspaceProps = {
   gaps: Gap[];
   analysis: Analysis | null;
   matchScore: number | null;
+  tracked: Tracked;
 };
 
 type Tab = "compare" | "changes" | "gaps";
@@ -130,6 +132,8 @@ export function TailorWorkspace(p: WorkspaceProps) {
           <Stat label="Job keywords in your resume" value={`${kwNow} of ${p.job.keywords.length}`} hint={kwAll > kwNow ? `${kwAll} if you accept every suggestion (was ${kwMaster})` : `was ${kwMaster} before tailoring`} />
           <Stat label="Suggestions" value={`${accepted.length} accepted`} hint={pending.length ? `${pending.length} waiting for your decision` : "all reviewed"} />
         </dl>
+
+        <TrackControl tailoredId={p.id} version={p.version} tracked={p.tracked} flush={flush} />
 
         {cov.length > 0 && (
           <details className="mt-4 rounded-lg border border-line bg-paper p-3">

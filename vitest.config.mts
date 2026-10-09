@@ -19,6 +19,7 @@ export default defineConfig({
       DATABASE_URL: "postgres://localhost:5432/jobsmith_test",
       AUTH_SECRET: "test-secret-test-secret-test-secret",
       STORAGE_DRIVER: "local",
+      CRON_SECRET: "test-cron-secret-0123456789",
     },
     fileParallelism: false,
   },

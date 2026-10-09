@@ -8,6 +8,9 @@ import { getLatestInsights } from "@/lib/resume/insights";
 import { getOpenQa, lastCompletedQaAt } from "@/lib/resume/qa-repo";
 import { getMasterResume } from "@/lib/resume/repo";
 import { listTailored } from "@/lib/tailor/repo";
+import { Attention } from "@/components/tracker/attention";
+import { dueForUser, listApplications } from "@/lib/tracker/repo";
+import { toView } from "@/lib/tracker/view";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Home" };
@@ -24,6 +27,8 @@ export default async function DashboardPage() {
   ]);
   const insights = master ? await getLatestInsights(master.id) : null;
   const tailored = await listTailored(user.id, 1);
+  const now = new Date();
+  const [due, apps] = await Promise.all([dueForUser(user.id, now), listApplications(user.id)]);
 
   const steps: Step[] = [
     {
@@ -75,6 +80,14 @@ export default async function DashboardPage() {
       cta: "Tailor to a job",
       done: tailored.length > 0,
     },
+    {
+      key: "track",
+      title: "Track your applications",
+      body: "Keep every application in one place with the exact resume you sent, and get nudges to follow up.",
+      href: "/tracker",
+      cta: "Open tracker",
+      done: apps.length > 0,
+    },
   ];
 
   const next = steps.find((s) => !s.done);
@@ -87,6 +100,8 @@ export default async function DashboardPage() {
         title={firstName ? `Welcome, ${firstName}` : "Welcome to Jobsmith"}
         description={next ? "Here’s the quickest path to a resume that fits the roles you want." : "Your profile is ready. Tailoring to specific jobs comes next."}
       />
+
+      {due.length > 0 && <div className="mb-6"><Attention items={due.map(toView)} now={now.toISOString()} compact /></div>}
 
       {next ? (
         <section aria-labelledby="next-step" className="rounded-2xl border border-brand/20 bg-brand-soft p-6 sm:p-8">
@@ -103,7 +118,7 @@ export default async function DashboardPage() {
         <section className="rounded-2xl border border-success/20 bg-success-soft p-6 sm:p-8">
           <h2 className="text-title text-ink">You’re set up</h2>
           <p className="mt-2 max-w-xl text-ink-muted">
-            Your master resume, profile and first tailored resume are in place. Tracking applications comes next.
+            Your master resume, profile, tailored resumes and tracker are all set up. Interview prep is next.
           </p>
         </section>
       )}

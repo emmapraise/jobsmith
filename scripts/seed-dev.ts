@@ -69,6 +69,20 @@ async function main() {
     ],
   };
   await db().insert(tables.roleInsights).values({ userId: user.id, resumeId: master.resumeId, resumeVersion: master.version, inputHash: insightsInputHash(content, profile.data), data }).onConflictDoNothing();
+  // Sample applications at different ages so the board, reminders and prompts all have something to show.
+  const { createApplication, listApplications } = await import("../src/lib/tracker/repo");
+  if ((await listApplications(user.id)).length === 0) {
+    const ago = (d: number) => new Date(Date.now() - d * 86_400_000);
+    const rows: [string, string, string, "saved" | "applied" | "screening" | "interview" | "offer" | "rejected", number][] = [
+      ["Monzo", "Backend Engineer", "London, UK", "saved", 9],
+      ["Wise", "Senior Backend Engineer", "London, UK (Hybrid)", "applied", 9],
+      ["Revolut", "Platform Engineer", "Remote (EMEA)", "applied", 3],
+      ["Stripe", "Software Engineer, Payments", "Dublin, Ireland", "screening", 2],
+      ["Datadog", "Senior SRE", "Paris, France", "interview", 1],
+      ["Klarna", "Backend Engineer", "Stockholm, Sweden", "rejected", 20],
+    ];
+    for (const [company, title, location, status, d] of rows) await createApplication({ userId: user.id, manual: { company, title, location, url: `https://example.com/${company.toLowerCase()}/jobs/1` }, status, resume: { master: true }, now: ago(d) });
+  }
   console.log(`Seeded ${email}`);
   process.exit(0);
 }

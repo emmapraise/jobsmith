@@ -4,18 +4,18 @@ import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/auth/actions";
 import type { CurrentUser } from "@/lib/auth/session";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { BottomNav, SidebarNav } from "./nav";
+import { BottomNav, SidebarNav, type Badges } from "./nav";
 
-const SOON = ["Application tracker", "Interview prep", "Job search"];
+const SOON = ["Interview prep", "Job search"];
 
-export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
+export function AppShell({ user, badges, children }: { user: CurrentUser; badges: Badges; children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-surface px-4 py-6 md:flex">
         <Logo href="/dashboard" className="px-2" />
         <div className="mt-8">
-          <SidebarNav />
+          <SidebarNav badges={badges} />
         </div>
         <div className="mt-8 px-3">
           <p className="eyebrow">Coming next</p>
@@ -51,7 +51,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           {children}
         </main>
       </div>
-      <BottomNav />
+      <BottomNav badges={badges} />
     </div>
   );
 }

@@ -201,3 +201,113 @@ describe("tailored resumes", () => {
     expect(await db().select().from(tables.tailoredResumeVersions).where(eq(tables.tailoredResumeVersions.tailoredResumeId, id))).toHaveLength(0);
   });
 });
+
+import { applicationForJob, createApplication, deleteApplication, dueCount, dueForUser, followedUp, getApplication, getEvents, listApplications, moveApplication, setApplicationResume, snoozeApplication, updateApplication } from "@/lib/tracker/repo";
+
+describe("application tracker", () => {
+  const day = 86_400_000;
+  const parsed = { title: "Platform Engineer", company: "Initech", location: "Remote", workMode: "remote" as const, seniority: "senior" as const, visaSponsorship: "unknown" as const, summary: "", keywords: [], responsibilities: [], requirements: [] };
+  const mkTailored = async (userId: string) => {
+    const m = (await getMasterResume(userId))!;
+    const id = await createTailored({ userId, masterResumeId: m.id, masterVersion: m.version, variant: "uk_eu", job: { source: "pasted_text", url: null, text: "t", parsed }, content: m.content, changes: [], gaps: [], analysis: { coverage: [], keywords: { total: 0, master: [], missing: [] } }, matchScore: 61 });
+    return { id, jobId: (await getTailored(userId, id))!.job.id, content: m.content };
+  };
+
+  it("creates from a tailoring, pins the exact resume version (frozen), and is idempotent per job", async () => {
+    const t = await mkTailored(A);
+    const now = new Date("2026-03-01T10:00:00Z");
+    const a = await createApplication({ userId: A, jobId: t.jobId, status: "applied", resume: { tailoredId: t.id }, now });
+    expect(a.created).toBe(true);
+    expect((await createApplication({ userId: A, jobId: t.jobId, status: "saved", resume: null })).created).toBe(false);
+    expect(await applicationForJob(A, t.jobId)).toEqual({ id: a.id, status: "applied" });
+
+    const row = (await getApplication(A, a.id))!;
+    expect(row).toMatchObject({ title: "Platform Engineer", company: "Initech", status: "applied", resume: { kind: "tailored", tailoredId: t.id, version: 1, frozen: true, matchScore: 61 } });
+    expect(row.appliedAt).toEqual(now);
+    expect(row.nextFollowUpAt).toEqual(new Date(now.getTime() + 7 * day)); // reminder set automatically
+
+    // Editing the tailored resume afterwards creates v2; the application still points at v1's exact content.
+    await mutateWorking(A, t.id, (w) => ({ ...w, content: { ...w.content, summary: "edited after applying" } }));
+    expect((await getTailored(A, t.id))!.version).toBe(2);
+    expect((await getApplication(A, a.id))!.resume).toMatchObject({ kind: "tailored", version: 1, frozen: true });
+    expect((await getEvents(A, a.id)).map((e) => e.to)).toEqual(["applied"]);
+  });
+
+  it("creates manual applications, moves stages with events, resets reminders, and sets appliedAt only once", async () => {
+    const t0 = new Date("2026-04-01T09:00:00Z");
+    const { id } = await createApplication({ userId: A, manual: { company: "Hooli", title: "SRE", url: "https://hooli.example/jobs/1", location: "London" }, status: "saved", resume: { master: true }, now: t0 });
+    let row = (await getApplication(A, id))!;
+    expect(row).toMatchObject({ status: "saved", appliedAt: null, nextFollowUpAt: null, url: "https://hooli.example/jobs/1" });
+    expect(row.resume?.kind).toBe("master");
+
+    const t1 = new Date(t0.getTime() + 2 * day);
+    expect(await moveApplication(A, id, "applied", t1)).toBe(true);
+    row = (await getApplication(A, id))!;
+    expect(row.appliedAt).toEqual(t1);
+    expect(row.nextFollowUpAt).toEqual(new Date(t1.getTime() + 7 * day));
+
+    const t2 = new Date(t1.getTime() + 4 * day);
+    await moveApplication(A, id, "interview", t2);
+    row = (await getApplication(A, id))!;
+    expect(row.appliedAt).toEqual(t1); // not overwritten
+    expect(row.nextFollowUpAt).toEqual(new Date(t2.getTime() + 3 * day));
+
+    await moveApplication(A, id, "rejected", new Date(t2.getTime() + day));
+    row = (await getApplication(A, id))!;
+    expect(row).toMatchObject({ status: "rejected", nextFollowUpAt: null });
+    expect((await getEvents(A, id)).map((e) => `${e.from ?? "-"}>${e.to}`)).toEqual(["->saved", "saved>applied", "applied>interview", "interview>rejected"]);
+    expect(await moveApplication(A, id, "rejected")).toBe(true); // no-op, no duplicate event
+    expect(await getEvents(A, id)).toHaveLength(4);
+  });
+
+  it("surfaces follow-ups and 'any news?' prompts, and answers clear them", async () => {
+    const t0 = new Date("2026-05-01T09:00:00Z");
+    const { id } = await createApplication({ userId: A, manual: { company: "Pied Piper", title: "Backend" }, status: "applied", resume: null, now: t0 });
+    const at = (d: number) => new Date(t0.getTime() + d * day);
+    expect((await dueForUser(A, at(3))).find((r) => r.id === id)).toBeUndefined();
+    const d8 = (await dueForUser(A, at(8))).find((r) => r.id === id)!;
+    expect(d8.due.followUpDue).not.toBeNull();
+    expect(d8.due.promptDue).toBe(false);
+    expect((await dueForUser(A, at(15))).find((r) => r.id === id)!.due.promptDue).toBe(true);
+    expect(await dueCount(A, at(15))).toBeGreaterThanOrEqual(1);
+
+    await followedUp(A, id, 7, at(15)); // followed up: next reminder in a week
+    await snoozeApplication(A, id, at(15)); // no news: quiet for a week
+    expect((await dueForUser(A, at(16))).find((r) => r.id === id)).toBeUndefined();
+    expect((await dueForUser(A, at(23))).find((r) => r.id === id)).toBeDefined();
+  });
+
+  it("updates notes/dates, swaps the resume used, is user-scoped, and deletes manual jobs with the application", async () => {
+    const { id } = await createApplication({ userId: A, manual: { company: "Soylent", title: "Dev" }, status: "saved", resume: null });
+    expect(await updateApplication(A, id, { notes: "Spoke to Dana", appliedAt: new Date("2026-02-02"), nextFollowUpAt: new Date("2026-02-09") })).toBe(true);
+    expect(await getApplication(A, id)).toMatchObject({ notes: "Spoke to Dana" });
+    expect(await setApplicationResume(A, id, { master: true })).toBe(true);
+    expect((await getApplication(A, id))!.resume?.kind).toBe("master");
+
+    expect(await getApplication(B, id)).toBeNull();
+    expect(await updateApplication(B, id, { notes: "hijack" })).toBe(false);
+    expect(await moveApplication(B, id, "offer")).toBe(false);
+    expect(await setApplicationResume(B, id, null)).toBe(false);
+    expect(await getEvents(B, id)).toEqual([]);
+    expect((await listApplications(B))).toEqual([]);
+
+    const jobId = (await getApplication(A, id))!.jobId;
+    await deleteApplication(B, id);
+    expect(await getApplication(A, id)).not.toBeNull();
+    await deleteApplication(A, id);
+    expect(await getApplication(A, id)).toBeNull();
+    expect(await db().select().from(tables.jobs).where(eq(tables.jobs.id, jobId))).toHaveLength(0);
+  });
+
+  it("keeps a tailoring's job when only the application is deleted", async () => {
+    const t = await mkTailored(A);
+    const { id } = await createApplication({ userId: A, jobId: t.jobId, status: "saved", resume: { tailoredId: t.id } });
+    await deleteApplication(A, id);
+    expect(await getTailored(A, t.id)).not.toBeNull();
+  });
+
+  it("rejects a job that belongs to someone else", async () => {
+    const t = await mkTailored(A);
+    await expect(createApplication({ userId: B, jobId: t.jobId, status: "saved", resume: null })).rejects.toThrow();
+  });
+});

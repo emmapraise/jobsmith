@@ -5,6 +5,7 @@ import { TailorWorkspace } from "@/components/tailor/workspace";
 import { requireUser } from "@/lib/auth/session";
 import { getMasterResume, getVersionContent } from "@/lib/resume/repo";
 import { getTailored } from "@/lib/tailor/repo";
+import { applicationForJob, getApplication } from "@/lib/tracker/repo";
 
 export const metadata = { title: "Tailored resume" };
 
@@ -17,6 +18,9 @@ export default async function TailoredPage({ params }: { params: Promise<{ id: s
 
   const [master, base] = await Promise.all([getMasterResume(user.id), getVersionContent(user.id, view.baseMasterVersion)]);
   const parsed = view.job.parsed;
+  const link = await applicationForJob(user.id, view.job.id);
+  const app = link ? await getApplication(user.id, link.id) : null;
+  const tracked = app ? { id: app.id, status: app.status, pinnedVersion: app.resume?.kind === "tailored" ? app.resume.version : null } : null;
 
   return (
     <div className="page pt-6 md:pt-10">
@@ -34,6 +38,7 @@ export default async function TailoredPage({ params }: { params: Promise<{ id: s
         gaps={view.gaps}
         analysis={view.analysis}
         matchScore={view.matchScore}
+        tracked={tracked}
       />
     </div>
   );

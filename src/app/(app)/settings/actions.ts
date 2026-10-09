@@ -8,6 +8,7 @@ import { requireUser } from "@/lib/auth/session";
 import { generateStructured, isProvider, MODEL_ID, PROVIDER_INFO } from "@/lib/llm";
 import { removeUserKey, resolveLlm, saveAiSelection, saveUserKey } from "@/lib/llm/user-config";
 import { log } from "@/lib/log";
+import { setEmailReminders } from "@/lib/tracker/reminders";
 
 export async function deleteAccountAction(confirmEmail: string): Promise<ActionResult> {
   try {
@@ -80,6 +81,16 @@ export async function testAiAction(): Promise<ActionResult<{ provider: string; m
     });
     if (!out.ok) return fail("The model replied, but not in the expected format. Try a different model.");
     return { ok: true, provider: PROVIDER_INFO[config.provider].label, model: config.model };
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+export async function setEmailRemindersAction(on: boolean): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    await setEmailReminders(user.id, Boolean(on));
+    return { ok: true };
   } catch (err) {
     return actionError(err);
   }
