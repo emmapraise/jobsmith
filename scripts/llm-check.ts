@@ -16,6 +16,31 @@ async function main() {
   const models = process.argv.slice(2).length ? process.argv.slice(2) : [e.LLM_MODEL ?? PROVIDER_INFO[e.LLM_PROVIDER].defaultModel];
   const text = await extractResumeText(new Uint8Array(readFileSync("tests/fixtures/sample-resume.pdf")), "pdf");
 
+  if (process.env.PREP) {
+    const { parseJob } = await import("../src/lib/jobs/parse");
+    const { generatePrep, evaluateAnswer } = await import("../src/lib/prep/engine");
+    const { emptyProfile } = await import("../src/lib/profile/schema");
+    const cfg = { provider: e.LLM_PROVIDER, model: models[0], apiKey };
+    const resume = await parseResumeText(text, cfg);
+    const jobText = readFileSync("tests/fixtures/sample-job.txt", "utf8");
+    const job = await parseJob(jobText, cfg);
+    const profile = { ...emptyProfile(), seniority: "senior" as const, needsVisaSponsorship: true, workModes: ["remote" as const], salaryMin: 70000, salaryCurrency: "GBP", salaryPeriod: "year" as const };
+    let t = Date.now();
+    const { questions, brief } = await generatePrep({ job, jobText, resume, profile, llm: cfg });
+    console.log(`PREP generated in ${((Date.now() - t) / 1000).toFixed(1)}s: ${questions.length} questions`, JSON.stringify(Object.fromEntries(["technical", "behavioural", "system_design", "gap"].map((c) => [c, questions.filter((q) => q.category === c).length]))));
+    for (const q of questions) console.log(`  [${q.category}/${q.difficulty}] ${q.question}\n      why: ${q.why} | points: ${q.keyPoints.length} | refs: ${q.resumeRefs.map((id) => resume.experience.find((x) => x.id === id)?.company ?? resume.projects.find((x) => x.id === id)?.name).join(",") || "-"}`);
+    console.log("BRIEF:", brief.summary); console.log("  does:", brief.whatTheyDo.join(" | ")); console.log("  tech:", brief.techAndTools.join(", ")); console.log("  culture:", brief.cultureSignals.join(" | "));
+    console.log("  clarify:", brief.clarifyEarly.join(" | ")); console.log("  ask:", brief.questionsToAsk.slice(0, 3).join(" | ")); console.log("  research:", brief.researchChecklist.slice(0, 3).join(" | "));
+    const beh = questions.find((q) => q.category === "behavioural")!;
+    const strong = "At DataWorks I owned our nightly ETL pipeline in Python and Airflow, which processed 2TB a day. When it started missing its SLA I traced it to unpartitioned joins, rewrote the slow stages and added alerting. The pipeline stopped missing its window, and I wrote the runbook so on-call engineers could fix similar issues without me. What I learned is to add monitoring before optimising.";
+    const weak = "Yeah I've dealt with that kind of thing before, we just worked together and it got sorted out in the end. It was fine.";
+    for (const [label, answer] of [["STRONG", strong], ["WEAK", weak]] as const) {
+      t = Date.now();
+      const f = await evaluateAnswer({ question: beh, answer, resume, llm: cfg });
+      console.log(`FEEDBACK ${label} (${((Date.now() - t) / 1000).toFixed(1)}s): overall=${f?.overall} scores=${JSON.stringify(f?.scores)}\n   verdict: ${f?.verdict}\n   improve: ${f?.improvements.slice(0, 2).join(" | ")}\n   resumeTips: ${f?.resumeTips.join(" | ") || "-"}`);
+    }
+    process.exit(0);
+  }
   if (process.env.TAILOR) {
     const { parseJob } = await import("../src/lib/jobs/parse");
     const { generateTailoring } = await import("../src/lib/tailor/engine");

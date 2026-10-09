@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "interview_preps_user_job_unique" ON "interview_preps" USING btree ("user_id","job_id");

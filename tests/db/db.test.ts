@@ -311,3 +311,72 @@ describe("application tracker", () => {
     await expect(createApplication({ userId: B, jobId: t.jobId, status: "saved", resume: null })).rejects.toThrow();
   });
 });
+
+import { addAttempt, clearAttempts, deletePrep, getPrep, listPreps, prepForJob, upsertPrep } from "@/lib/prep/repo";
+import type { PrepData } from "@/lib/prep/schema";
+
+describe("interview prep", () => {
+  const data = (n = 2): PrepData => ({
+    version: 1,
+    questions: Array.from({ length: n }, (_, i) => ({ id: `t${i + 1}`, category: "technical" as const, question: `Question number ${i + 1} about APIs?`, why: "w", difficulty: "medium" as const, keyPoints: ["a"], followUps: [], resumeRefs: [], requirementIds: [] })),
+    brief: { summary: "s", whatTheyDo: [], techAndTools: [], cultureSignals: [], clarifyEarly: [], researchChecklist: [], questionsToAsk: [], sources: ["job_posting"] },
+    attempts: [], generatedAt: new Date().toISOString(), basis: { resume: "Master v1", companyUrl: null },
+  });
+  const attempt = (questionId: string, overall: number) => ({ id: crypto.randomUUID(), questionId, answer: "my answer", at: new Date().toISOString(), seconds: 30, feedback: { scores: { accuracy: overall }, overall, verdict: "v", strengths: [], improvements: [], suggestedOutline: [], resumeTips: [] } });
+
+  it("creates one prep per job (upsert replaces content), scoped to the user", async () => {
+    const { id: appId } = await createApplication({ userId: A, manual: { company: "PrepCo", title: "Engineer" }, status: "interview", resume: null });
+    const jobId = (await getApplication(A, appId))!.jobId;
+    const id = await upsertPrep(A, jobId, appId, data(2));
+    expect((await upsertPrep(A, jobId, appId, data(3)))).toBe(id); // same row, new content
+    const view = (await getPrep(A, id))!;
+    expect(view).toMatchObject({ title: "Engineer", company: "PrepCo", applicationId: appId });
+    expect(view.data.questions).toHaveLength(3);
+    expect((await prepForJob(A, jobId))!.id).toBe(id);
+    expect((await listPreps(A)).map((p) => p.id)).toContain(id);
+
+    expect(await getPrep(B, id)).toBeNull();
+    expect(await prepForJob(B, jobId)).toBeNull();
+    expect(await listPreps(B)).toEqual([]);
+    await expect(upsertPrep(B, jobId, null, data())).rejects.toThrow();
+  });
+
+  it("records attempts only for real questions and only for the owner, and can clear them", async () => {
+    const { id: appId } = await createApplication({ userId: A, manual: { company: "AttemptCo", title: "Dev" }, status: "interview", resume: null });
+    const jobId = (await getApplication(A, appId))!.jobId;
+    const id = await upsertPrep(A, jobId, appId, data(2));
+    expect(await addAttempt(A, id, attempt("t1", 3))).toBe(true);
+    expect(await addAttempt(A, id, attempt("t1", 4))).toBe(true);
+    expect(await addAttempt(A, id, attempt("t2", 2))).toBe(true);
+    expect(await addAttempt(A, id, attempt("nope", 5))).toBe(false);
+    expect(await addAttempt(B, id, attempt("t1", 5))).toBe(false);
+    expect((await getPrep(A, id))!.data.attempts).toHaveLength(3);
+
+    expect(await clearAttempts(B, id)).toBe(false);
+    await clearAttempts(A, id, "t1");
+    expect((await getPrep(A, id))!.data.attempts.map((a) => a.questionId)).toEqual(["t2"]);
+    await clearAttempts(A, id);
+    expect((await getPrep(A, id))!.data.attempts).toHaveLength(0);
+  });
+
+  it("keeps the prep (and its job) when the application is deleted, and deletes only for the owner", async () => {
+    const { id: appId } = await createApplication({ userId: A, manual: { company: "KeepCo", title: "SRE" }, status: "interview", resume: null });
+    const jobId = (await getApplication(A, appId))!.jobId;
+    const id = await upsertPrep(A, jobId, appId, data());
+    await deleteApplication(A, appId);
+    const kept = (await getPrep(A, id))!;
+    expect(kept).toMatchObject({ company: "KeepCo", applicationId: null }); // link cleared, content kept
+    await deletePrep(B, id);
+    expect(await getPrep(A, id)).not.toBeNull();
+    await deletePrep(A, id);
+    expect(await getPrep(A, id)).toBeNull();
+  });
+
+  it("ignores malformed stored data instead of crashing", async () => {
+    const { id: appId } = await createApplication({ userId: A, manual: { company: "BadCo", title: "X" }, status: "saved", resume: null });
+    const jobId = (await getApplication(A, appId))!.jobId;
+    const [row] = await db().insert(tables.interviewPreps).values({ userId: A, jobId, data: { version: 99 } }).returning();
+    expect(await getPrep(A, row.id)).toBeNull();
+    expect((await listPreps(A)).find((p) => p.id === row.id)).toBeUndefined();
+  });
+});

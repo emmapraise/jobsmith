@@ -296,7 +296,7 @@ export const interviewPreps = pgTable("interview_preps", {
   data: jsonb("data").notNull(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
-});
+}, (t) => [uniqueIndex("interview_preps_user_job_unique").on(t.userId, t.jobId)]);
 
 /* ───────────────────────────── AI provider settings ───────────────────────────── */
 

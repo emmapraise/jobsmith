@@ -27,6 +27,8 @@ export async function clearOfflineData(): Promise<void> {
       await Promise.all(keys.filter((k) => k.startsWith(PAGES_CACHE_PREFIX)).map((k) => caches.delete(k)));
     }
     localStorage.removeItem(WARM_KEY);
+    // Interview-answer drafts and checklist progress are private too.
+    for (const k of Object.keys(localStorage)) if (k.startsWith("jobsmith:draft:") || k.startsWith("jobsmith:prep:")) localStorage.removeItem(k);
   } catch {
     /* nothing to clear */
   }

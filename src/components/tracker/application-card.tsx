@@ -7,6 +7,7 @@ import { BellRing, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { moveApplicationAction } from "@/app/(app)/tracker/actions";
 import { NativeSelect } from "@/components/native-select";
+import { offerPrep } from "./prep-toast";
 import { describeFollowUp } from "@/lib/tracker/due";
 import { STAGES, STAGE_LABEL } from "@/lib/tracker/stages";
 import { ago, type AppView } from "@/lib/tracker/view";
@@ -58,6 +59,7 @@ export function ApplicationCard({ app, now }: { app: AppView; now: string }) {
             const r = await moveApplicationAction(app.id, e.target.value);
             if (!r.ok) toast.error(r.message);
             else if (e.target.value === "offer") toast.success("Congratulations on the offer!");
+            else if (e.target.value === "interview") offerPrep(app.jobId, (href) => router.push(href));
             router.refresh();
           })
         }

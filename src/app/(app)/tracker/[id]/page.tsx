@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { requireUser } from "@/lib/auth/session";
 import { resumeOptions } from "@/lib/tracker/options";
 import { getApplication, getEvents } from "@/lib/tracker/repo";
+import { progressByQuestion } from "@/lib/prep/build";
+import { prepForJob } from "@/lib/prep/repo";
 import { STAGE_LABEL } from "@/lib/tracker/stages";
 import { toView } from "@/lib/tracker/view";
 
@@ -17,6 +19,9 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const [app, events, options] = await Promise.all([getApplication(user.id, id), getEvents(user.id, id), resumeOptions(user.id)]);
   if (!app) notFound();
+  const prepRow = await prepForJob(user.id, app.jobId);
+  const prog = prepRow ? progressByQuestion(prepRow.data.attempts) : null;
+  const prep = prepRow ? { id: prepRow.id, questions: prepRow.data.questions.length, practised: prepRow.data.questions.filter((q) => prog!.has(q.id)).length } : null;
 
   return (
     <div className="page">
@@ -32,6 +37,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
         app={toView(app)}
         events={events.map((e) => ({ from: e.from as never, to: e.to as never, at: e.at.toISOString() }))}
         resumeOptions={options}
+        prep={prep}
         now={new Date().toISOString()}
       />
     </div>

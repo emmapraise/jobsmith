@@ -4,6 +4,7 @@ import type { Stage } from "./stages";
 /** JSON-safe application for client components (dates as ISO strings). */
 export type AppView = {
   id: string;
+  jobId: string;
   title: string;
   company: string;
   location: string;
@@ -18,7 +19,7 @@ export type AppView = {
 };
 
 export const toView = (r: AppRow | DueRow): AppView => ({
-  id: r.id, title: r.title, company: r.company, location: r.location, url: r.url, status: r.status,
+  id: r.id, jobId: r.jobId, title: r.title, company: r.company, location: r.location, url: r.url, status: r.status,
   appliedAt: r.appliedAt?.toISOString() ?? null, nextFollowUpAt: r.nextFollowUpAt?.toISOString() ?? null, statusChangedAt: r.statusChangedAt.toISOString(),
   notes: r.notes, resume: r.resume,
   ...("due" in r ? { due: { followUpDue: r.due.followUpDue?.toISOString() ?? null, promptDue: r.due.promptDue, daysInStage: r.due.daysInStage } } : {}),

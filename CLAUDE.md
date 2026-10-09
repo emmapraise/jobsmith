@@ -15,7 +15,7 @@ job tracker → interview prep → job search.
 1. Master resume — upload, parse, review/correct, guided Q&A, profile questions, role insights. **DONE (see status)**
 2. Tailoring — job link/paste ingestion, tailored resume + change list + match score, side-by-side editor, PDF/DOCX export. **DONE**
 3. Job tracker — Saved/Applied/Screening/Interview/Offer/Rejected, resume version per card, status prompts, reminders. **DONE**
-4. Interview prep — technical/behavioural/system-design questions, practice mode with feedback, company brief.
+4. Interview prep — technical/behavioural/system-design questions, practice mode with feedback, company brief. **DONE**
 5. Job search — job APIs/aggregators, remote boards, pasted links; filters (country, remote/relocation, visa); fit score; one-click tailor/save. **Never scrape sites that forbid it.**
 
 ## Stack (decided — don't re-litigate)
@@ -62,6 +62,7 @@ src/lib/resume/             Zod schema for structured resume, text extraction, p
 src/lib/jobs/               SSRF-safe URL fetch (net.ts), robots.txt, HTML/JSON-LD extraction, ingest (link or paste), LLM job parse
 src/lib/tailor/             typed changes (changes.ts), fact check (factcheck.ts), validation (materialize.ts), LLM verifier (verify.ts),
                             engine (engine.ts), score, gap questions, manual-edit guard (guard.ts), repo (versions; frozen = immutable)
+src/lib/prep/               interview prep: schema, pure validation (build.ts), LLM engine (engine.ts), context (which resume), repo
 src/lib/tracker/            stage rules (stages.ts), what's due (due.ts), repo (applications + events), opt-in email digest (digest.ts, reminders.ts)
 src/lib/export/             one neutral doc model (model.ts) → PDF (pdfkit) and DOCX (docx); UK/EU CV vs US resume; cached by content hash
 src/lib/profile/            profile Zod schema
@@ -98,6 +99,18 @@ Glassdoor). A link that can't be read always falls back to the paste box.
   Digests contain only job titles/companies the user typed, never resume content.
 - Downloads must start from `lib/download.ts` (hidden link); never `window.location = downloadUrl` (breaks in Safari).
 
+## Interview prep rules (M4)
+- One prep pack per user+job (unique index). Grounded in the resume the user actually applied with (`prep/context.ts`: pinned application version,
+  else latest tailored, else master). Questions come from 3 parallel LLM calls (technical+system design / behavioural+gaps / brief) and are
+  validated in `build.ts`: dedupe, caps, guidance required, `resumeRefs` must be real experience/project ids.
+- The company brief is built ONLY from the job posting and an optional company page the user supplies (fetched via `jobs/net.ts`). The model has no
+  web access: never let it state company facts from memory. Unknowns become a research checklist / questions to ask. `brief.sources` is shown in the UI.
+- "Settle these early" is deterministic (`clarifyEarly`): derived from the user's profile (visa, work mode, salary) and what the posting says.
+- Feedback scores only the category's RUBRIC dimensions (1-5), the overall is computed in code, and "resume tips" must pass `factCheck` against the
+  resume. Feedback must never invent the user's experience; outlines use [placeholders].
+- Practice answers/feedback live in `interview_preps.data` (private; deleted with the account). Drafts are in localStorage under `jobsmith:draft:*`
+  and are cleared on sign-out. `/prep` pages are on the offline allowlist (read-only); practising needs a connection.
+
 ## PWA / offline rules (don't weaken)
 - Installable via `app/manifest.ts` + generated icons (`/pwa-icon/[size]`). `public/sw.js` is plain JS (no build) and only registers in production.
 - Offline = READ ONLY. The worker saves only the allowlisted page paths in `PAGE_RE` (dashboard, resume, roles, tailor, tracker + detail pages) after a
@@ -125,6 +138,7 @@ Without LLM keys the app runs but parsing/insights show a clear "AI not configur
 
 ## Status log
 - M0: complete (2026-10-09).
+- M4: complete (2026-10-09). Prep packs, practice with scored feedback, company brief; verified in real Chrome against a real model.
 - PWA: installable + offline reading (2026-10-09). Production URL: https://getjobsmith.vercel.app
 - M3: complete (2026-10-09). Board + detail + prompts + opt-in email digest; verified in the browser and with DB integration tests.
 - M2: complete (2026-10-09). Verified against a real OpenAI key (gpt-4.1); PDF/DOCX text round-trips in tests.

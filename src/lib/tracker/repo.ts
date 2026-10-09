@@ -195,9 +195,10 @@ export async function deleteApplication(userId: string, id: string): Promise<voi
   const [a] = await db().select({ jobId: ap.jobId }).from(ap).where(and(eq(ap.id, id), eq(ap.userId, userId))).limit(1);
   if (!a) return;
   await db().delete(ap).where(eq(ap.id, id));
-  // A job created only for tracking (no tailored resume refers to it) is removed with it.
+  // A job created only for tracking is removed with it, unless a tailored resume or interview prep still uses it.
   const [still] = await db().select({ id: tr.id }).from(tr).where(eq(tr.jobId, a.jobId)).limit(1);
-  if (!still) await db().delete(jobs).where(and(eq(jobs.id, a.jobId), eq(jobs.userId, userId)));
+  const [prep] = await db().select({ id: tables.interviewPreps.id }).from(tables.interviewPreps).where(eq(tables.interviewPreps.jobId, a.jobId)).limit(1);
+  if (!still && !prep) await db().delete(jobs).where(and(eq(jobs.id, a.jobId), eq(jobs.userId, userId)));
 }
 
 export type DueRow = AppRow & { due: DueApp };

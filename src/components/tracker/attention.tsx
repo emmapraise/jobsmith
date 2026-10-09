@@ -7,6 +7,7 @@ import { BellRing, MessageCircleQuestion } from "lucide-react";
 import { toast } from "sonner";
 import { followedUpAction, moveApplicationAction, noNewsAction } from "@/app/(app)/tracker/actions";
 import { NativeSelect } from "@/components/native-select";
+import { offerPrep } from "./prep-toast";
 import { Button } from "@/components/ui/button";
 import { describeFollowUp } from "@/lib/tracker/due";
 import { STAGE_LABEL, type Stage } from "@/lib/tracker/stages";
@@ -34,11 +35,14 @@ function Item({ app, now }: { app: AppView; now: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const due = app.due!;
-  const run = (fn: () => Promise<{ ok: boolean; message?: string }>, ok?: string) =>
+  const run = (fn: () => Promise<{ ok: boolean; message?: string }>, ok?: string, after?: () => void) =>
     start(async () => {
       const r = await fn();
       if (!r.ok) toast.error(r.message ?? "Something went wrong");
-      else if (ok) toast.success(ok);
+      else {
+        if (ok) toast.success(ok);
+        after?.();
+      }
       router.refresh();
     });
   const follow = due.followUpDue ? describeFollowUp(new Date(due.followUpDue), new Date(now)) : null;
@@ -67,7 +71,7 @@ function Item({ app, now }: { app: AppView; now: string }) {
             {follow && <Button size="sm" disabled={pending} onClick={() => run(() => followedUpAction(app.id, 7), "Nice. We’ll remind you again in a week.")}>I followed up</Button>}
             <label className="sr-only" htmlFor={`news-${app.id}`}>Update the status of {app.title}</label>
             <NativeSelect id={`news-${app.id}`} defaultValue="" disabled={pending} className="h-8 w-auto text-sm"
-              onChange={(e) => e.target.value && run(() => moveApplicationAction(app.id, e.target.value))}>
+              onChange={(e) => { const to = e.target.value; if (to) run(() => moveApplicationAction(app.id, to), undefined, to === "interview" ? () => offerPrep(app.jobId, (href) => router.push(href)) : undefined); }}>
               <option value="">I have news…</option>
               {NEWS.filter((s) => s !== app.status).map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
             </NativeSelect>

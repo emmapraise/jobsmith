@@ -12,6 +12,7 @@ import { listTailored } from "@/lib/tailor/repo";
 import { Attention } from "@/components/tracker/attention";
 import { dueForUser, listApplications } from "@/lib/tracker/repo";
 import { toView } from "@/lib/tracker/view";
+import { listPreps } from "@/lib/prep/repo";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Home" };
@@ -29,7 +30,8 @@ export default async function DashboardPage() {
   const insights = master ? await getLatestInsights(master.id) : null;
   const tailored = await listTailored(user.id, 1);
   const now = new Date();
-  const [due, apps] = await Promise.all([dueForUser(user.id, now), listApplications(user.id)]);
+  const [due, apps, preps] = await Promise.all([dueForUser(user.id, now), listApplications(user.id), listPreps(user.id)]);
+  const needPrep = apps.filter((a) => a.status === "interview" && !preps.some((p) => p.jobId === a.jobId));
 
   const steps: Step[] = [
     {
@@ -102,6 +104,19 @@ export default async function DashboardPage() {
         description={next ? "Here’s the quickest path to a resume that fits the roles you want." : "Your profile is ready. Tailoring to specific jobs comes next."}
       />
 
+      {needPrep.length > 0 && (
+        <section aria-label="Interview prep" className="mb-6 rounded-2xl border border-brand/20 bg-brand-soft p-4 sm:p-5">
+          <h2 className="text-lg text-brand-soft-ink">You have {needPrep.length === 1 ? "an interview" : `${needPrep.length} interviews`} coming up</h2>
+          <ul className="mt-2 space-y-1.5">
+            {needPrep.slice(0, 3).map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 text-sm text-brand-soft-ink">
+                <span className="min-w-0 truncate">{a.title} at {a.company}</span>
+                <Link href={`/prep?job=${a.jobId}`} className="font-medium underline underline-offset-4">Prepare</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <InstallBanner />
       {due.length > 0 && <div className="mb-6"><Attention items={due.map(toView)} now={now.toISOString()} compact /></div>}
 

@@ -21,7 +21,7 @@ const NAV_TIMEOUT_MS = 4000;
 const MAX_WARM_ASSETS = 60;
 
 /** Pages that may be saved for offline reading. */
-const PAGE_RE = /^\/(?:dashboard|resume|roles|tailor|tracker)$|^\/(?:tailor|tracker)\/[0-9a-f-]{36}$/i;
+const PAGE_RE = /^\/(?:dashboard|resume|roles|tailor|tracker|prep)$|^\/(?:tailor|tracker|prep)\/[0-9a-f-]{36}$/i;
 const isSavedPage = (pathname) => PAGE_RE.test(pathname);
 const isStaticAsset = (pathname) => pathname.indexOf("/_next/static/") === 0 || pathname.indexOf("/pwa-icon/") === 0;
 

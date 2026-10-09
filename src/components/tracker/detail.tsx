@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { BellRing, Download, ExternalLink, FileText, Lock, Trash2 } from "lucide-react";
+import { BellRing, Download, ExternalLink, FileText, GraduationCap, Lock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   deleteApplicationAction, exportApplicationResumeAction, followedUpAction, moveApplicationAction, setResumeAction, updateApplicationAction,
 } from "@/app/(app)/tracker/actions";
 import { NativeSelect } from "@/components/native-select";
+import { offerPrep } from "./prep-toast";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,9 @@ export type EventView = { from: Stage | null; to: Stage; at: string };
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
-export function ApplicationDetail({ app, events, resumeOptions, now }: { app: AppView; events: EventView[]; resumeOptions: ResumeOption[]; now: string }) {
+export type PrepSummary = { id: string; questions: number; practised: number } | null;
+
+export function ApplicationDetail({ app, events, resumeOptions, now, prep }: { app: AppView; events: EventView[]; resumeOptions: ResumeOption[]; now: string; prep: PrepSummary }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [notes, setNotes] = useState(app.notes);
@@ -59,7 +62,7 @@ export function ApplicationDetail({ app, events, resumeOptions, now }: { app: Ap
           <div className="mt-3 grid gap-4 sm:grid-cols-3">
             <div>
               <Label htmlFor="stage" className="mb-1.5 block text-sm font-medium text-ink">Stage</Label>
-              <NativeSelect id="stage" value={app.status} disabled={pending} onChange={(e) => run(() => moveApplicationAction(app.id, e.target.value), e.target.value === "offer" ? "Congratulations on the offer!" : undefined)}>
+              <NativeSelect id="stage" value={app.status} disabled={pending} onChange={(e) => { const to = e.target.value; run(() => moveApplicationAction(app.id, to), to === "offer" ? "Congratulations on the offer!" : undefined); if (to === "interview" && !prep) offerPrep(app.jobId, (href) => router.push(href)); }}>
                 {STAGES.map((s) => <option key={s} value={s}>{STAGE_LABEL[s]}</option>)}
               </NativeSelect>
             </div>
@@ -106,6 +109,21 @@ export function ApplicationDetail({ app, events, resumeOptions, now }: { app: Ap
       </div>
 
       <aside className="space-y-6">
+        <section aria-labelledby="prep" className="rounded-2xl border border-line bg-surface p-5">
+          <h2 id="prep" className="flex items-center gap-2 text-xl text-ink"><GraduationCap className="size-5 text-brand" aria-hidden="true" /> Interview prep</h2>
+          {prep ? (
+            <>
+              <p className="mt-3 text-sm text-ink-muted">{prep.practised} of {prep.questions} questions practised.</p>
+              <Button className="mt-3" render={<Link href={`/prep/${prep.id}`} />}>Open prep pack</Button>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-sm text-ink-muted">Likely technical, behavioural and system-design questions for this role, practice with feedback, and a short company brief.</p>
+              <Button className="mt-3" variant={app.status === "interview" ? "default" : "outline"} render={<Link href={`/prep?job=${app.jobId}`} />}>Prepare for this interview</Button>
+            </>
+          )}
+        </section>
+
         <section aria-labelledby="resume" className="rounded-2xl border border-line bg-surface p-5">
           <h2 id="resume" className="flex items-center gap-2 text-xl text-ink"><FileText className="size-5 text-brand" aria-hidden="true" /> Resume used</h2>
           {app.resume ? (

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { listSavedPages, type SavedPage } from "@/lib/pwa";
 
-const LABEL: Record<string, string> = { "/dashboard": "Home", "/tracker": "Applications", "/tailor": "Tailored resumes", "/roles": "Roles you fit", "/resume": "Master resume" };
+const LABEL: Record<string, string> = { "/dashboard": "Home", "/tracker": "Applications", "/tailor": "Tailored resumes", "/roles": "Roles you fit", "/resume": "Master resume", "/prep": "Interview prep" };
 const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 /** What you can still read right now, straight from this device's saved pages. */
@@ -23,7 +23,7 @@ export function SavedPages() {
           <Link href={p.path} className="flex items-center justify-between gap-3 px-4 py-3.5 hover:bg-surface-sunken">
             <span className="min-w-0">
               <span className="block truncate font-medium text-ink">{LABEL[p.path] ?? (p.title || p.path)}</span>
-              <span className="block truncate text-xs text-ink-muted">{p.path.startsWith("/tracker/") ? "Application" : p.path.startsWith("/tailor/") ? "Tailored resume" : "Saved page"}{p.savedAt ? ` · saved ${fmt.format(new Date(p.savedAt))}` : ""}</span>
+              <span className="block truncate text-xs text-ink-muted">{p.path.startsWith("/tracker/") ? "Application" : p.path.startsWith("/tailor/") ? "Tailored resume" : p.path.startsWith("/prep/") ? "Interview prep" : "Saved page"}{p.savedAt ? ` · saved ${fmt.format(new Date(p.savedAt))}` : ""}</span>
             </span>
             <span className="text-sm text-brand" aria-hidden="true">Open</span>
           </Link>

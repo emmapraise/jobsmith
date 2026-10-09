@@ -9,7 +9,7 @@ import type { CurrentUser } from "@/lib/auth/session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav, SidebarNav, type Badges } from "./nav";
 
-const SOON = ["Interview prep", "Job search"];
+const SOON = ["Job search"];
 
 export function AppShell({ user, badges, children }: { user: CurrentUser; badges: Badges; children: React.ReactNode }) {
   return (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ClipboardList, Compass, Ellipsis, FileText, Home, Settings, Sparkles, UserRound, type LucideIcon } from "lucide-react";
+import { ClipboardList, Compass, Ellipsis, FileText, GraduationCap, Home, Settings, Sparkles, UserRound, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Item = { href: string; label: string; icon: LucideIcon };
@@ -15,6 +15,7 @@ export const NAV: Item[] = [
   { href: "/roles", label: "Roles", icon: Compass },
   { href: "/tailor", label: "Tailor", icon: Sparkles },
   { href: "/tracker", label: "Tracker", icon: ClipboardList },
+  { href: "/prep", label: "Prep", icon: GraduationCap },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

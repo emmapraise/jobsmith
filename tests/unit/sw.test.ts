@@ -94,7 +94,7 @@ describe("what it must NOT touch", () => {
     await fire("install", event());
     net.mockReset();
     net.mockImplementation(async () => html("Settings"));
-    for (const p of ["/settings", "/profile", "/resume/review", "/resume/update", "/sign-in", "/tracker/not-a-uuid"]) {
+    for (const p of ["/settings", "/profile", "/resume/review", "/resume/update", "/sign-in", "/tracker/not-a-uuid", "/prep/not-a-uuid"]) {
       const r = await navigate(p);
       expect(r).not.toBeNull();
     }
@@ -129,6 +129,9 @@ describe("saved pages (offline reading)", () => {
     expect(await pages.keys()).toHaveLength(1);
     await navigate(`/tailor/${T1}`);
     expect(await pages.keys()).toHaveLength(2);
+    await navigate("/prep");
+    await navigate(`/prep/${T1}`);
+    expect(await pages.keys()).toHaveLength(4); // interview prep is readable offline too
   });
 
   it("falls back to the offline page when offline and the page was never saved", async () => {
