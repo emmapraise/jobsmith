@@ -26,6 +26,14 @@ Rules: **never reuse `AUTH_SECRET` across environments**, never commit `.env*` f
 
 The build command is `npm run vercel-build`, which **applies pending database migrations** (using `DATABASE_URL_UNPOOLED`) and then builds. A failed migration fails the deploy, so the old version keeps serving.
 
+### Notes from the first deployment
+
+- Pushing to `main` deploys to Production; other branches and PRs get Preview deployments (own Neon branch, magic-link sign-in only since Google needs fixed redirect URIs).
+- `vercel link` writes a `VERCEL_OIDC_TOKEN` into `.env.local`. It is short-lived and unused by the app; delete the line.
+- Environment variable changes only apply to **new** deployments: redeploy after changing them.
+- R2 buckets are created in R2's default jurisdiction. If you need data to stay in the EU, create them with the EU jurisdiction and point the S3 endpoint at `<account>.eu.r2.cloudflarestorage.com` (currently hard-coded in `src/lib/storage/r2.ts`).
+- Preview and Production share the same R2 buckets (objects are keyed by user id, and the databases differ). Use separate buckets if that matters to you.
+
 ## Post-deploy checks
 
 ```bash

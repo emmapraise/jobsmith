@@ -3,6 +3,8 @@
 Free web app that helps software engineers, AI engineers and other tech people land jobs: upload one master resume,
 see the roles you fit, tailor the resume to each job without inventing anything, track applications, prep for interviews.
 
+Live: https://jobsmith-eight.vercel.app (private: sign-in is restricted to approved emails).
+
 Project rules, stack decisions and conventions live in **[CLAUDE.md](./CLAUDE.md)**. The milestone plan is in [docs/PLAN.md](./docs/PLAN.md).
 
 ## Run locally
