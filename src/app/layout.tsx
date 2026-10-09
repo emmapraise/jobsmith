@@ -3,6 +3,9 @@ import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
+// Runs before first paint so there is no light flash. Stored value: "light" | "dark" | "system" (default).
+const THEME_SCRIPT = `try{var t=localStorage.getItem("theme");var d=t==="dark"||((!t||t==="system")&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d)}catch(e){}`;
+
 const body = Geist({ variable: "--font-body", subsets: ["latin"] });
 const display = Fraunces({ variable: "--font-display", subsets: ["latin"], axes: ["opsz"] });
 const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -14,11 +17,21 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fbf8f1" };
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbf8f1" },
+    { media: "(prefers-color-scheme: dark)", color: "#14171d" },
+  ],
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${body.variable} ${display.variable} ${mono.variable} h-full`}>
+    <html lang="en" suppressHydrationWarning className={`${body.variable} ${display.variable} ${mono.variable} h-full`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <a
           href="#main"

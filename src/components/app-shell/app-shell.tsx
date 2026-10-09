@@ -3,6 +3,7 @@ import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/auth/actions";
 import type { CurrentUser } from "@/lib/auth/session";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav, SidebarNav } from "./nav";
 
 const SOON = ["Tailor to a job", "Application tracker", "Interview prep", "Job search"];
@@ -31,6 +32,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           <p className="truncate px-2 text-sm text-ink-muted" title={user.email}>
             {user.email}
           </p>
+          <ThemeToggle className="mx-2 mt-3" />
           <form action={signOutAction} className="mt-2">
             <Button type="submit" variant="ghost" className="w-full justify-start gap-2 text-ink-muted">
               <LogOut aria-hidden="true" /> Sign out
@@ -43,6 +45,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
         {/* Mobile top bar */}
         <header className="sticky top-0 z-20 flex h-14 items-center border-b border-line bg-surface/95 px-[var(--gutter)] backdrop-blur md:hidden">
           <Logo href="/dashboard" />
+          <ThemeToggle className="ml-auto" />
         </header>
         <main id="main" className="flex-1 pb-24 md:pb-12">
           {children}

@@ -31,6 +31,7 @@ job tracker → interview prep → job search.
   provider's key. **No provider-specific code outside `src/lib/llm`.** All structured outputs use Zod schemas.
 - Export (M2): PDF + DOCX, ATS-friendly, regional variants (UK/EU CV vs US resume).
 - Pricing: free. **No payments code.**
+- Theme: light/dark/system via a `.dark` class on `<html>` (tokens in `globals.css`, toggle in `components/theme-toggle.tsx`, no-flash script in `layout.tsx`).
 - Next config: `cacheComponents` and `partialPrefetching` are deliberately **off** — the app is fully authenticated and
   dynamic, so classic dynamic rendering avoids wrapping every session read in Suspense.
 

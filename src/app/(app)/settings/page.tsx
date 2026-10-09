@@ -1,4 +1,5 @@
 import { LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { DeleteAccount } from "@/components/settings/delete-account";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,12 @@ export default async function SettingsPage() {
         <form action={signOutAction} className="mt-4">
           <Button type="submit" variant="outline"><LogOut data-icon="inline-start" aria-hidden="true" /> Sign out</Button>
         </form>
+      </section>
+
+      <section aria-labelledby="appearance" className="mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+        <h2 id="appearance" className="text-xl text-ink">Appearance</h2>
+        <p className="mt-2 text-ink-muted">Choose light, dark, or follow your device.</p>
+        <ThemeToggle className="mt-4" />
       </section>
 
       <section aria-labelledby="privacy" className="mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">

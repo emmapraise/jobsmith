@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Light-only for now: `dark:` utilities apply only under a .dark ancestor, never from the OS setting. */
+/* `dark:` utilities apply under a .dark ancestor (class strategy), so the user's theme choice wins over the OS. */
 @custom-variant dark (&:is(.dark *));
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -17,6 +17,7 @@
    ════════════════════════════════════════════════════════════════════════════ */
 
 :root {
+  color-scheme: light;
   /* Surfaces */
   --paper: oklch(0.982 0.007 85);
   --surface: oklch(0.999 0.003 85);
@@ -89,6 +90,39 @@
   --sidebar-accent-foreground: var(--brand-soft-ink);
   --sidebar-border: var(--line);
   --sidebar-ring: var(--brand);
+}
+
+/* Dark theme: same token names, so no component changes. Toggled by a .dark class on <html>
+   (set before first paint by the inline script in layout.tsx; "system" follows the OS). */
+.dark {
+  color-scheme: dark;
+  --paper: oklch(0.175 0.016 255);
+  --surface: oklch(0.215 0.018 255);
+  --surface-sunken: oklch(0.255 0.02 255);
+  --line: oklch(0.32 0.02 255);
+  --line-strong: oklch(0.43 0.022 255);
+
+  --ink: oklch(0.955 0.01 85);
+  --ink-muted: oklch(0.76 0.018 255);
+  --ink-faint: oklch(0.66 0.018 255);
+
+  --brand: oklch(0.74 0.105 190);
+  --brand-hover: oklch(0.8 0.1 190);
+  --brand-fg: oklch(0.2 0.035 195);
+  --brand-soft: oklch(0.31 0.05 195);
+  --brand-soft-ink: oklch(0.9 0.05 190);
+
+  --change-soft: oklch(0.33 0.055 85);
+  --change-line: oklch(0.52 0.09 85);
+  --change-ink: oklch(0.92 0.07 90);
+
+  --success: oklch(0.76 0.14 155);
+  --success-soft: oklch(0.3 0.05 155);
+  --danger: oklch(0.72 0.17 27);
+  --danger-soft: oklch(0.3 0.06 27);
+
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-pop: 0 8px 28px oklch(0 0 0 / 0.5), 0 2px 6px oklch(0 0 0 / 0.3);
 }
 
 @theme inline {

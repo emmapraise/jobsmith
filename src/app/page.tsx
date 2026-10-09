@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Check, FileSearch, Lock, ShieldCheck, X } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -18,6 +19,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
       <header className="page flex h-16 items-center justify-between">
         <Logo />
         <nav className="flex items-center gap-2" aria-label="Account">
+          <ThemeToggle />
           {user ? (
             <Button render={<Link href="/dashboard" />}>Open Jobsmith</Button>
           ) : (
