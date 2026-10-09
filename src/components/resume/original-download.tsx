@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
+import { startDownload } from "@/lib/download";
 import { Button } from "@/components/ui/button";
 import { originalDownloadUrlAction } from "@/app/(app)/resume/actions";
 
@@ -15,7 +16,7 @@ export function OriginalDownload() {
       onClick={() =>
         start(async () => {
           const r = await originalDownloadUrlAction();
-          if (r.ok) window.location.assign(r.url);
+          if (r.ok) startDownload(r.url);
           else toast.error(r.message);
         })
       }

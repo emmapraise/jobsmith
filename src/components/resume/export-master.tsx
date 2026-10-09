@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { exportMasterAction } from "@/app/(app)/resume/actions";
 import { NativeSelect } from "@/components/native-select";
+import { startDownload } from "@/lib/download";
 import { Button } from "@/components/ui/button";
 
 export function ExportMaster() {
@@ -13,7 +14,7 @@ export function ExportMaster() {
   const go = (format: "pdf" | "docx") =>
     start(async () => {
       const r = await exportMasterAction(format, variant);
-      if (r.ok) window.location.assign(r.url);
+      if (r.ok) startDownload(r.url, r.fileName);
       else toast.error(r.message);
     });
   return (

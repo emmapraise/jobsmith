@@ -14,6 +14,7 @@ import type { ResumeContent } from "@/lib/resume/schema";
 import { changeState, changeTargets, withPending } from "@/lib/tailor/changes";
 import { keywordsPresent } from "@/lib/tailor/factcheck";
 import type { Analysis, Decision, Gap, TailorChange } from "@/lib/tailor/types";
+import { startDownload } from "@/lib/download";
 import { cn } from "@/lib/utils";
 import { ChangeCard } from "./change-card";
 import { GapsPanel } from "./gaps-panel";
@@ -95,8 +96,7 @@ export function TailorWorkspace(p: WorkspaceProps) {
       const r = await exportTailoredAction(p.id, format);
       if (!r.ok) return void toast.error(r.message);
       if (r.pending > 0) toast.message(`${r.pending} suggestion${r.pending === 1 ? "" : "s"} not reviewed yet, so not included in this file.`);
-      window.location.assign(r.url);
-      router.refresh();
+      startDownload(r.url, r.fileName); // no navigation, no refresh: both abort the download in Safari
     });
 
   const score = p.matchScore;
