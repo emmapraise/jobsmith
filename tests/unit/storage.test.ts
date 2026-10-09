@@ -56,3 +56,12 @@ describe("local storage driver", () => {
     expect(await s.deletePrefix("uploads", `users/${uid}/`)).toBe(0);
   });
 });
+
+import { createR2Storage } from "@/lib/storage/r2";
+import { StorageNotConfiguredError } from "@/lib/storage/types";
+
+describe("R2 storage without credentials", () => {
+  it("fails with a clear error only when storage is used, not at boot", () => {
+    expect(() => createR2Storage()).toThrow(StorageNotConfiguredError);
+  });
+});

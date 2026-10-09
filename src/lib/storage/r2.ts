@@ -9,13 +9,14 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { env } from "@/lib/env";
+import { env, r2Configured } from "@/lib/env";
 import { assertValidKey } from "./keys";
-import { clampTtl, type Bucket, type ObjectStorage, type SignedUrlOptions } from "./types";
+import { clampTtl, StorageNotConfiguredError, type Bucket, type ObjectStorage, type SignedUrlOptions } from "./types";
 
 /** Cloudflare R2 through the S3 API. */
 export function createR2Storage(): ObjectStorage {
   const e = env();
+  if (!r2Configured(e)) throw new StorageNotConfiguredError();
   const client = new S3Client({
     region: "auto",
     endpoint: `https://${e.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,

@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { env } from "@/lib/env";
+import { env, r2Configured } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +22,7 @@ export async function GET() {
     ok: dbOk,
     db: dbOk,
     storage: e.STORAGE_DRIVER,
+    storageConfigured: e.STORAGE_DRIVER === "local" || r2Configured(e),
     email: Boolean(e.AUTH_RESEND_KEY),
     googleSignIn: Boolean(e.AUTH_GOOGLE_ID && e.AUTH_GOOGLE_SECRET),
     serverAiKey: Boolean(e.ANTHROPIC_API_KEY || e.OPENAI_API_KEY || e.GOOGLE_GENERATIVE_AI_API_KEY),

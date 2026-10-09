@@ -1,6 +1,7 @@
 import "server-only";
 import { LlmError, LlmNotConfiguredError } from "@/lib/llm";
 import { log } from "@/lib/log";
+import { StorageNotConfiguredError } from "@/lib/storage/types";
 import { rateLimitUser, type POLICIES } from "@/lib/rate-limit";
 
 export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; message: string; code?: string };
@@ -13,6 +14,7 @@ export function actionError(err: unknown) {
     return fail("AI isn't configured on this server yet. Add an API key to .env.local and restart.", "ai_not_configured");
   }
   if (err instanceof LlmError) return fail(err.message, "ai_failed");
+  if (err instanceof StorageNotConfiguredError) return fail(err.message, "storage_not_configured");
   log.error("action.unhandled", err);
   return fail("Something went wrong. Please try again.", "server_error");
 }

@@ -22,7 +22,9 @@ async function main() {
     process.exit(1);
   }
 
+  const { r2Configured } = await import("../src/lib/env");
   const warn: string[] = [];
+  if (e.STORAGE_DRIVER === "r2" && !r2Configured(e)) warn.push("R2 credentials are missing: uploads and exports will fail until R2_ACCOUNT_ID, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY are set");
   if (!e.ALLOWED_EMAILS) warn.push("ALLOWED_EMAILS is not set: anyone can sign up" + (e.ANTHROPIC_API_KEY || e.OPENAI_API_KEY || e.GOOGLE_GENERATIVE_AI_API_KEY ? " and use your server AI key" : ""));
   if (!e.AUTH_GOOGLE_ID || !e.AUTH_GOOGLE_SECRET) warn.push("Google sign-in is not configured");
   if (!e.AUTH_RESEND_KEY) warn.push("AUTH_RESEND_KEY is not set: magic-link emails will not be sent");

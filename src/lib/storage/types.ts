@@ -28,3 +28,11 @@ export const MAX_URL_TTL_SECONDS = 3600;
 export function clampTtl(s?: number): number {
   return Math.min(Math.max(Math.floor(s ?? DEFAULT_URL_TTL_SECONDS), 10), MAX_URL_TTL_SECONDS);
 }
+
+/** Storage is selected but not configured (e.g. R2 credentials missing). Everything else keeps working. */
+export class StorageNotConfiguredError extends Error {
+  constructor() {
+    super("File storage isn't configured on this server yet.");
+    this.name = "StorageNotConfiguredError";
+  }
+}

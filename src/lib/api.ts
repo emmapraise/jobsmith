@@ -4,6 +4,7 @@ import { LlmError, LlmNotConfiguredError } from "@/lib/llm";
 import { log } from "@/lib/log";
 import { UnauthorizedError } from "@/lib/auth/session";
 import { UploadError } from "@/lib/resume/upload";
+import { StorageNotConfiguredError } from "@/lib/storage/types";
 
 export type ApiFailure = { ok: false; code: string; message: string; retryAfterSeconds?: number };
 
@@ -22,7 +23,9 @@ export function handleApiError(err: unknown) {
   if (err instanceof LlmNotConfiguredError) {
     return fail("ai_not_configured", "AI isn't configured on this server yet. Add an API key and try again.", 503);
   }
+
   if (err instanceof LlmError) return fail("ai_failed", err.message, 502);
+  if (err instanceof StorageNotConfiguredError) return fail("storage_not_configured", err.message, 503);
   log.error("api.unhandled", err);
   return fail("server_error", "Something went wrong on our side. Please try again.", 500);
 }

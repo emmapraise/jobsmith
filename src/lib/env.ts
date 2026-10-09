@@ -46,14 +46,14 @@ const schema = z
     if (e.NODE_ENV === "production" && !e.AUTH_RESEND_KEY) {
       ctx.addIssue({ code: "custom", path: ["AUTH_RESEND_KEY"], message: "production requires AUTH_RESEND_KEY (magic-link emails)" });
     }
-    if (e.STORAGE_DRIVER === "r2") {
-      for (const k of ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"] as const) {
-        if (!e[k]) ctx.addIssue({ code: "custom", path: [k], message: `${k} is required when STORAGE_DRIVER=r2` });
-      }
-    }
   });
 
 export type Env = z.infer<typeof schema>;
+
+/** R2 credentials present? Checked when storage is used (not at boot), so the rest of the app works without it. */
+export function r2Configured(e: Env = env()): boolean {
+  return Boolean(e.R2_ACCOUNT_ID && e.R2_ACCESS_KEY_ID && e.R2_SECRET_ACCESS_KEY);
+}
 
 let cached: Env | undefined;
 
