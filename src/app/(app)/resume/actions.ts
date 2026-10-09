@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { actionError, fail, limitOrFail, type ActionResult } from "@/lib/action";
 import { requireUser } from "@/lib/auth/session";
+import { resolveLlm } from "@/lib/llm/user-config";
 import { generateQuestions, proposeChanges } from "@/lib/resume/qa";
 import {
   abandonQa,
@@ -79,7 +80,7 @@ export async function startQaAction(): Promise<ActionResult> {
     const limited = await limitOrFail(user.id, ["ai", "aiBurst"]);
     if (limited) return limited;
 
-    const questions = await generateQuestions(master.content);
+    const questions = await generateQuestions(master.content, await resolveLlm(user.id));
     if (questions.length === 0) {
       return fail("Your resume looks complete — we have no questions right now. You can still edit it manually.", "no_questions");
     }
@@ -117,7 +118,7 @@ export async function finishQuestionsAction(qaId: string): Promise<ActionResult<
     const limited = await limitOrFail(user.id, ["ai", "aiBurst"]);
     if (limited) return limited;
 
-    const changes = await proposeChanges(master.content, qa.questions, qa.answers);
+    const changes = await proposeChanges(master.content, qa.questions, qa.answers, await resolveLlm(user.id));
     await moveToReview(user.id, qaId, changes);
     revalidatePath("/resume/update");
     return { ok: true, changes: changes.length };

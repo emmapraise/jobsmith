@@ -8,6 +8,13 @@
       "when": 1791533791553,
       "tag": "0000_plain_boom_boom",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791537318191,
+      "tag": "0001_flimsy_black_tarantula",
+      "breakpoints": true
     }
   ]
 }

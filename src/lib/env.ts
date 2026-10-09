@@ -15,6 +15,9 @@ const schema = z
     AUTH_RESEND_KEY: opt(z.string()),
     EMAIL_FROM: z.preprocess(blank, z.string().default("Jobsmith <login@jobsmith.local>")),
 
+    // Encrypts users' own API keys at rest. Falls back to AUTH_SECRET.
+    APP_ENCRYPTION_KEY: opt(z.string().min(16)),
+
     STORAGE_DRIVER: z.preprocess(blank, z.enum(["r2", "local"]).default("local")),
     R2_ACCOUNT_ID: opt(z.string()),
     R2_ACCESS_KEY_ID: opt(z.string()),

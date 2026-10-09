@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleApiError, tooManyRequests, fail } from "@/lib/api";
 import { requireUserApi } from "@/lib/auth/session";
+import { resolveLlm } from "@/lib/llm/user-config";
 import { log } from "@/lib/log";
 import { rateLimitUser } from "@/lib/rate-limit";
 import { parseResumeText } from "@/lib/resume/parse";
@@ -29,6 +30,9 @@ export async function POST(req: Request) {
     const declared = Number(req.headers.get("content-length") ?? 0);
     if (declared > MAX_UPLOAD_BYTES + 64 * 1024) throw new UploadError("too_large", "That file is larger than 5 MB.");
 
+    // Fail fast (before reading the file) if no AI provider/key is usable for this user.
+    const llm = await resolveLlm(user.id);
+
     const form = await req.formData();
     const file = form.get("file");
     if (!(file instanceof File)) throw new UploadError("missing_file", "Choose a PDF or DOCX file to upload.");
@@ -38,7 +42,7 @@ export async function POST(req: Request) {
     const text = await extractResumeText(bytes, kind);
 
     // Parse first: if the AI step fails, nothing is stored.
-    const content = await parseResumeText(text);
+    const content = await parseResumeText(text, llm);
 
     const resumeId = (await getResumeId(user.id)) ?? crypto.randomUUID();
     const versionId = crypto.randomUUID();

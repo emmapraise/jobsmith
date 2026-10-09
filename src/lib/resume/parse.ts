@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { generateStructured, untrusted, UNTRUSTED_NOTICE } from "@/lib/llm";
+import { generateStructured, untrusted, UNTRUSTED_NOTICE, type LlmConfig } from "@/lib/llm";
 import { newId, resumeContentSchema, type ResumeContent } from "./schema";
 
 /**
@@ -71,8 +71,9 @@ Rules:
 - If a section does not exist in the resume, return an empty array for it.
 ${UNTRUSTED_NOTICE}`;
 
-export async function parseResumeText(text: string): Promise<ResumeContent> {
+export async function parseResumeText(text: string, config: LlmConfig): Promise<ResumeContent> {
   const parsed = await generateStructured(parsedResumeSchema, {
+    config,
     system: SYSTEM,
     prompt: `Convert this resume to the structured format.\n\n${untrusted("resume", text)}`,
     maxOutputTokens: 12_000,

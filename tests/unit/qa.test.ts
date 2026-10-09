@@ -21,6 +21,7 @@ const questions: QAQuestion[] = [
 ];
 const c = (o: object) => ({ op: "add_bullet", targetId: "e1", text: "x", groupName: null, items: [], role: null, cert: null, description: "d", reason: "r", ...o });
 
+const cfg = { provider: "openai" as const, model: "gpt-5", apiKey: "k" };
 beforeEach(() => generateStructured.mockReset());
 
 describe("generateQuestions", () => {
@@ -31,7 +32,7 @@ describe("generateQuestions", () => {
         ...Array.from({ length: 10 }, (_, i) => ({ question: `Q${i}`, why: "w", kind: i === 0 ? "choice" : "text", choices: i === 0 ? ["a", "b"] : ["zzz"], targetId: null })),
       ],
     });
-    const qs = await generateQuestions(resume);
+    const qs = await generateQuestions(resume, cfg);
     expect(qs).toHaveLength(8);
     expect(qs[0].choices).toEqual(["a", "b"]);
     expect(qs[1].choices).toBeUndefined();
@@ -41,7 +42,7 @@ describe("generateQuestions", () => {
 
 describe("proposeChanges (truthfulness guard)", () => {
   it("does not call the model when nothing was answered", async () => {
-    const out = await proposeChanges(resume, questions, [{ questionId: "q1", answer: "", skipped: true }]);
+    const out = await proposeChanges(resume, questions, [{ questionId: "q1", answer: "", skipped: true }], cfg);
     expect(out).toEqual([]);
     expect(generateStructured).not.toHaveBeenCalled();
   });
@@ -50,7 +51,7 @@ describe("proposeChanges (truthfulness guard)", () => {
     generateStructured.mockResolvedValue({
       changes: [c({ text: "Led migration" }), c({ targetId: "ghost", text: "Invented" }), c({ op: "replace_bullet", targetId: "nope", text: "x" })],
     });
-    const out = await proposeChanges(resume, questions, [{ questionId: "q2", answer: "Led a migration", skipped: false }]);
+    const out = await proposeChanges(resume, questions, [{ questionId: "q2", answer: "Led a migration", skipped: false }], cfg);
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({ decision: "pending", description: "d", reason: "r" });
   });
@@ -60,7 +61,7 @@ describe("proposeChanges (truthfulness guard)", () => {
     await proposeChanges(resume, questions, [
       { questionId: "q1", answer: "", skipped: true },
       { questionId: "q2", answer: "40k users", skipped: false },
-    ]);
+    ], cfg);
     const prompt = generateStructured.mock.calls[0][1].prompt as string;
     expect(prompt).toContain("40k users");
     expect(prompt).not.toContain("Still at Acme?");

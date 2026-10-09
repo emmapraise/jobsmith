@@ -4,12 +4,14 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { z } from "zod";
-import { env } from "@/lib/env";
 import { log } from "@/lib/log";
+import { PROVIDER_INFO, type Provider } from "./catalog";
+
+export * from "./catalog";
 
 /**
  * Provider-agnostic LLM interface. This file is the ONLY place that imports provider SDKs.
- * Choose the provider with LLM_PROVIDER (anthropic | openai | google) and the model with LLM_MODEL.
+ * Provider, model and key are chosen per user in Settings (see user-config.ts), falling back to LLM_PROVIDER / LLM_MODEL and the env keys.
  *
  * Schema guidance (keeps schemas portable across providers' strict structured-output modes):
  * every key required; use `.nullable()` instead of `.optional()`; avoid `z.union` of objects.
@@ -31,37 +33,29 @@ export class LlmError extends Error {
   }
 }
 
-const DEFAULT_MODELS = {
-  anthropic: "claude-sonnet-5-5",
-  openai: "gpt-5",
-  google: "gemini-2.5-pro",
-} as const;
+/** Everything needed to make a call. Resolved per user by `resolveLlm` (user-config.ts). */
+export type LlmConfig = { provider: Provider; model: string; apiKey: string };
 
-const KEY_VAR = {
-  anthropic: "ANTHROPIC_API_KEY",
-  openai: "OPENAI_API_KEY",
-  google: "GOOGLE_GENERATIVE_AI_API_KEY",
-} as const;
-
-export function isLlmConfigured(): boolean {
-  const e = env();
-  return Boolean(e[KEY_VAR[e.LLM_PROVIDER]]);
-}
-
-function getModel(): LanguageModel {
-  const e = env();
-  const provider = e.LLM_PROVIDER;
-  const apiKey = e[KEY_VAR[provider]];
-  if (!apiKey) throw new LlmNotConfiguredError(provider);
-  const modelId = e.LLM_MODEL ?? DEFAULT_MODELS[provider];
+function getModel({ provider, model, apiKey }: LlmConfig): LanguageModel {
   switch (provider) {
     case "anthropic":
-      return createAnthropic({ apiKey })(modelId);
+      return createAnthropic({ apiKey })(model);
     case "openai":
-      return createOpenAI({ apiKey })(modelId);
+      return createOpenAI({ apiKey })(model);
     case "google":
-      return createGoogleGenerativeAI({ apiKey })(modelId);
+      return createGoogleGenerativeAI({ apiKey })(model);
   }
+}
+
+/** Safe, specific messages: classifies by HTTP status only and never echoes provider text (it can include prompt content). */
+function describeError(err: unknown, config: LlmConfig): LlmError {
+  const status = (err as { statusCode?: number })?.statusCode;
+  const label = PROVIDER_INFO[config.provider].label;
+  if (status === 401 || status === 403) return new LlmError(`${label} rejected the API key. Check it in Settings → AI provider.`);
+  if (status === 404) return new LlmError(`${label} doesn't recognise the model "${config.model}". Pick another model in Settings.`);
+  if (status === 429) return new LlmError(`${label} says you're out of quota or rate limited. Try again shortly or check your plan.`);
+  if (status === 400) return new LlmError(`${label} refused the request. The model "${config.model}" may not support structured output; try another model.`);
+  return new LlmError();
 }
 
 /** Provider options that opt out of provider-side retention where the API offers it. */
@@ -70,6 +64,7 @@ function providerOptions() {
 }
 
 export type LlmCallOptions = {
+  config: LlmConfig;
   system: string;
   prompt: string;
   maxOutputTokens?: number;
@@ -83,7 +78,7 @@ export async function generateStructured<S extends z.ZodType>(
   schema: S,
   opts: LlmCallOptions,
 ): Promise<z.infer<S>> {
-  const model = getModel();
+  const model = getModel(opts.config);
   try {
     const result = await generateText({
       model,
@@ -98,14 +93,13 @@ export async function generateStructured<S extends z.ZodType>(
     });
     return result.output as z.infer<S>;
   } catch (err) {
-    if (err instanceof LlmNotConfiguredError) throw err;
-    log.error("llm.generateStructured.failed", err);
-    throw new LlmError();
+    log.error("llm.generateStructured.failed", err, { status: (err as { statusCode?: number })?.statusCode });
+    throw describeError(err, opts.config);
   }
 }
 
 export async function generateFreeText(opts: LlmCallOptions): Promise<string> {
-  const model = getModel();
+  const model = getModel(opts.config);
   try {
     const result = await generateText({
       model,
@@ -119,8 +113,8 @@ export async function generateFreeText(opts: LlmCallOptions): Promise<string> {
     });
     return result.text;
   } catch (err) {
-    log.error("llm.generateText.failed", err);
-    throw new LlmError();
+    log.error("llm.generateText.failed", err, { status: (err as { statusCode?: number })?.statusCode });
+    throw describeError(err, opts.config);
   }
 }
 

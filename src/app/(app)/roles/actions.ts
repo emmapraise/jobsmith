@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { actionError, fail, limitOrFail, type ActionResult } from "@/lib/action";
 import { requireUser } from "@/lib/auth/session";
+import { resolveLlm } from "@/lib/llm/user-config";
 import { getProfile } from "@/lib/profile/repo";
 import { generateInsights, getCachedInsights, insightsInputHash } from "@/lib/resume/insights";
 import { getMasterResume } from "@/lib/resume/repo";
@@ -21,7 +22,7 @@ export async function generateInsightsAction(force: boolean): Promise<ActionResu
     const limited = await limitOrFail(user.id, ["ai", "aiBurst"]);
     if (limited) return limited;
 
-    await generateInsights({ userId: user.id, resumeId: master.id, resumeVersion: master.version, resume: master.content, profile });
+    await generateInsights({ userId: user.id, resumeId: master.id, resumeVersion: master.version, resume: master.content, profile, llm: await resolveLlm(user.id) });
     revalidatePath("/roles");
     return { ok: true };
   } catch (err) {

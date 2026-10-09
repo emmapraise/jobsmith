@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { generateStructured, untrusted, UNTRUSTED_NOTICE } from "@/lib/llm";
+import { generateStructured, untrusted, UNTRUSTED_NOTICE, type LlmConfig } from "@/lib/llm";
 import type { QAAnswer, QAProposedChange, QAQuestion } from "@/lib/db/schema";
 import { applyChange, changeSchema, ChangeError } from "./apply-change";
 import type { ResumeContent } from "./schema";
@@ -37,8 +37,9 @@ Rules:
 - Never ask for sensitive personal data (age, date of birth, marital status, religion, ID numbers, photo).
 ${UNTRUSTED_NOTICE}`;
 
-export async function generateQuestions(resume: ResumeContent, today = new Date()): Promise<QAQuestion[]> {
+export async function generateQuestions(resume: ResumeContent, config: LlmConfig, today = new Date()): Promise<QAQuestion[]> {
   const out = await generateStructured(questionsSchema, {
+    config,
     system: QUESTION_SYSTEM,
     prompt: `Today is ${today.toISOString().slice(0, 10)}.\n\n${untrusted("resume-json", JSON.stringify(resume))}`,
     maxOutputTokens: 3000,
@@ -79,6 +80,7 @@ export async function proposeChanges(
   resume: ResumeContent,
   questions: QAQuestion[],
   answers: QAAnswer[],
+  config: LlmConfig,
 ): Promise<QAProposedChange[]> {
   const answered = answers.filter((a) => !a.skipped && a.answer.trim());
   if (answered.length === 0) return [];
@@ -90,6 +92,7 @@ export async function proposeChanges(
   }));
 
   const out = await generateStructured(changesSchema, {
+    config,
     system: CHANGE_SYSTEM,
     prompt: `${untrusted("resume-json", JSON.stringify(resume))}\n\n${untrusted("user-answers", JSON.stringify(qa))}`,
     maxOutputTokens: 4000,

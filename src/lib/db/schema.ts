@@ -278,6 +278,18 @@ export const interviewPreps = pgTable("interview_preps", {
   updatedAt: updatedAt(),
 });
 
+/* ───────────────────────────── AI provider settings ───────────────────────────── */
+
+/** Per-user choice of LLM provider/model, plus optional user-supplied API keys (AES-GCM encrypted). */
+export const userAiSettings = pgTable("user_ai_settings", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider"),
+  model: text("model"),
+  /** { anthropic?: "v1.…", openai?: "v1.…", google?: "v1.…" } encrypted blobs. Never sent to the client. */
+  encryptedKeys: jsonb("encrypted_keys").$type<Record<string, string>>().notNull().default({}),
+  updatedAt: updatedAt(),
+});
+
 /* ───────────────────────────────── Rate limiting ───────────────────────────────── */
 
 export const rateLimits = pgTable(

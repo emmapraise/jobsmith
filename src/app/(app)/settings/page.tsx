@@ -1,15 +1,18 @@
 import { LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AiProviderSettings } from "@/components/settings/ai-provider";
 import { DeleteAccount } from "@/components/settings/delete-account";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/auth/actions";
 import { requireUser } from "@/lib/auth/session";
+import { getAiSettingsView } from "@/lib/llm/user-config";
 
 export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const user = await requireUser();
+  const ai = await getAiSettingsView(user.id);
   return (
     <div className="page max-w-3xl">
       <PageHeader eyebrow="Settings" title="Account & privacy" />
@@ -20,6 +23,14 @@ export default async function SettingsPage() {
         <form action={signOutAction} className="mt-4">
           <Button type="submit" variant="outline"><LogOut data-icon="inline-start" aria-hidden="true" /> Sign out</Button>
         </form>
+      </section>
+
+      <section aria-labelledby="ai" className="mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+        <h2 id="ai" className="text-xl text-ink">AI provider</h2>
+        <p className="mb-5 mt-2 max-w-2xl text-ink-muted">
+          Choose which AI reads and rewrites your resume, and which model it uses. Use a key from this server, or add your own.
+        </p>
+        <AiProviderSettings view={{ provider: ai.provider, model: ai.model, providers: ai.providers }} />
       </section>
 
       <section aria-labelledby="appearance" className="mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">

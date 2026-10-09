@@ -8,6 +8,8 @@ import { emptyResume, type ResumeContent } from "@/lib/resume/schema";
 import { getProfile, saveProfile } from "@/lib/profile/repo";
 import { createQa, completeQa, decideChange, getOpenQa, moveToReview, saveAnswer } from "@/lib/resume/qa-repo";
 import { storage } from "@/lib/storage";
+import { getAiSettingsView, removeUserKey, resolveLlm, saveAiSelection, saveUserKey } from "@/lib/llm/user-config";
+import { LlmNotConfiguredError } from "@/lib/llm";
 
 const A = `t-${crypto.randomUUID()}`;
 const B = `t-${crypto.randomUUID()}`;
@@ -100,6 +102,32 @@ describe("Q&A sessions", () => {
     expect(after.content.experience[0].bullets.map((b) => b.text)).toEqual(["Led migration"]);
     expect(after.version).toBe(master.version + 2);
     expect(await getOpenQa(A)).toBeNull();
+  });
+});
+
+describe("per-user AI settings", () => {
+  it("falls back to env defaults, then honours the user's provider, model and own key; keys stay encrypted", async () => {
+    const v0 = await getAiSettingsView(A);
+    expect(v0).toMatchObject({ provider: "anthropic", explicitProvider: null });
+    await expect(resolveLlm(A)).rejects.toBeInstanceOf(LlmNotConfiguredError); // no env key in tests
+
+    await saveAiSelection(A, "openai", "gpt-4.1");
+    await saveUserKey(A, "openai", "sk-user-abcdef1234");
+    expect(await resolveLlm(A)).toEqual({ provider: "openai", model: "gpt-4.1", apiKey: "sk-user-abcdef1234" });
+    const view = await getAiSettingsView(A);
+    expect(view.providers.find((p) => p.provider === "openai")).toEqual({ provider: "openai", keySource: "own", keyLast4: "1234" });
+    expect(JSON.stringify(view)).not.toContain("sk-user");
+
+    const [raw] = await db().select().from(tables.userAiSettings).where(eq(tables.userAiSettings.userId, A));
+    expect(JSON.stringify(raw)).not.toContain("sk-user");
+
+    // another user is unaffected
+    expect((await getAiSettingsView(B)).explicitProvider).toBeNull();
+
+    await saveAiSelection(A, "openai", null); // model back to default
+    expect((await resolveLlm(A)).model).toBe("gpt-4.1");
+    await removeUserKey(A, "openai");
+    await expect(resolveLlm(A)).rejects.toBeInstanceOf(LlmNotConfiguredError);
   });
 });
 

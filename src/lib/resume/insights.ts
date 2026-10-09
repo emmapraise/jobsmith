@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, tables } from "@/lib/db";
-import { generateStructured, untrusted, UNTRUSTED_NOTICE } from "@/lib/llm";
+import { generateStructured, untrusted, UNTRUSTED_NOTICE, type LlmConfig } from "@/lib/llm";
 import type { ProfileData } from "@/lib/profile/schema";
 import type { ResumeContent } from "./schema";
 
@@ -14,7 +14,7 @@ export const insightsSchema = z.object({
     z.object({
       title: z.string(),
       category: z.enum(["best_fit", "adjacent"]),
-      fitScore: z.number().int().min(0).max(100),
+      fitScore: z.number().int().min(0).max(100).describe("Integer 0-100 (not 0-10). 85 = excellent match, 50 = partial, below 30 = weak."),
       whyFit: z.string(),
       /** Facts from the resume that support this role. */
       evidence: z.array(z.string()),
@@ -77,9 +77,11 @@ export async function generateInsights(args: {
   resumeVersion: number;
   resume: ResumeContent;
   profile: ProfileData;
+  llm: LlmConfig;
 }): Promise<RoleInsights> {
   const hash = insightsInputHash(args.resume, args.profile);
   const out = await generateStructured(insightsSchema, {
+    config: args.llm,
     system: SYSTEM,
     prompt: `${untrusted("resume-json", JSON.stringify(args.resume))}\n\n${untrusted("preferences-json", JSON.stringify(relevantProfile(args.profile)))}`,
     maxOutputTokens: 6000,

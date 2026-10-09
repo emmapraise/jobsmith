@@ -27,8 +27,9 @@ job tracker → interview prep → job search.
   Buckets `jobsmith-uploads` (original resumes) and `jobsmith-exports` (PDF/DOCX, cached by content hash). Both private.
   Signed URLs only, short-lived. Keys: `users/{userId}/resumes/{resumeId}/...`.
   `STORAGE_DRIVER=local` is a dev-only filesystem driver (`.data/storage`, HMAC-signed URLs); production must use `r2`.
-- LLM: Vercel AI SDK behind `src/lib/llm`. Pick with `LLM_PROVIDER` (`anthropic|openai|google`) + `LLM_MODEL` + that
-  provider's key. **No provider-specific code outside `src/lib/llm`.** All structured outputs use Zod schemas.
+- LLM: Vercel AI SDK behind `src/lib/llm`. Provider/model/key resolve per user (`llm/user-config.ts`): the user's choice and
+  own encrypted key from Settings → AI provider, else `LLM_PROVIDER`/`LLM_MODEL` + env keys. Every LLM call takes an explicit
+  `LlmConfig`. Models must support structured output (`gpt-4` does not; `gpt-4.1` verified). **No provider-specific code outside `src/lib/llm`.** All structured outputs use Zod schemas.
 - Export (M2): PDF + DOCX, ATS-friendly, regional variants (UK/EU CV vs US resume).
 - Pricing: free. **No payments code.**
 - Theme: light/dark/system via a `.dark` class on `<html>` (tokens in `globals.css`, toggle in `components/theme-toggle.tsx`, no-flash script in `layout.tsx`).
