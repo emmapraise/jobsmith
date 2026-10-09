@@ -3,7 +3,7 @@
 Free web app that helps software engineers, AI engineers and other tech people land jobs: upload one master resume,
 see the roles you fit, tailor the resume to each job without inventing anything, track applications, prep for interviews.
 
-Live: https://jobsmith-eight.vercel.app (private: sign-in is restricted to approved emails).
+Live: https://getjobsmith.vercel.app (private: sign-in is restricted to approved emails).
 
 Project rules, stack decisions and conventions live in **[CLAUDE.md](./CLAUDE.md)**. The milestone plan is in [docs/PLAN.md](./docs/PLAN.md).
 
@@ -33,6 +33,7 @@ See **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** (Vercel + Neon + Cloudflare R
 |---|---|
 | `npm run dev` / `build` / `start` | Next.js |
 | `npm run typecheck` · `lint` · `test` | Quality gates (tests use the `jobsmith_test` database) |
+| `npm run pwa:e2e` | Real-Chrome check of install, offline reading and sign-out cleanup (see the script header) |
 | `npm run env:check -- <file> [--prod]` | Validate an env file against the app's schema (prints no values) |
 | `npm run db:generate` · `db:migrate` | Drizzle migrations |
 | `npm run llm:check` | Run the real parser against your configured provider (`TAILOR=1` / `FULL=1` for tailoring / Q&A) |

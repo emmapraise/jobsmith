@@ -1,4 +1,6 @@
 import { LogOut } from "lucide-react";
+import { InstallCard } from "@/components/pwa/install-prompt";
+import { SignOutForm } from "@/components/pwa/sign-out-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AiProviderSettings } from "@/components/settings/ai-provider";
 import { EmailReminders } from "@/components/settings/reminders";
@@ -22,9 +24,14 @@ export default async function SettingsPage() {
       <section aria-labelledby="account" className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
         <h2 id="account" className="text-xl text-ink">Account</h2>
         <p className="mt-2 text-ink-muted">Signed in as <span className="font-medium text-ink">{user.email}</span></p>
-        <form action={signOutAction} className="mt-4">
+        <SignOutForm action={signOutAction} className="mt-4">
           <Button type="submit" variant="outline"><LogOut data-icon="inline-start" aria-hidden="true" /> Sign out</Button>
-        </form>
+        </SignOutForm>
+      </section>
+
+      <section aria-labelledby="install" className="mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+        <h2 id="install" className="mb-3 text-xl text-ink">Install the app</h2>
+        <InstallCard />
       </section>
 
       <section aria-labelledby="ai" className="mt-6 rounded-2xl border border-line bg-surface p-5 sm:p-6">

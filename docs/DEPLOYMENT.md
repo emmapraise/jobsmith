@@ -43,6 +43,16 @@ curl https://<your-domain>/api/health
 
 Then: sign in, upload a resume, tailor to a job, download a PDF, add the job to the tracker.
 
+## Installable app (PWA) and offline
+
+Jobsmith is a PWA: **Install** it from Settings (Android/desktop Chrome), or on iPhone use Safari → Share → *Add to Home Screen*.
+Open pages are saved on the device for **offline reading** (dashboard, applications and their details, tailored CVs, roles, master
+resume). Editing, tailoring, moving stages and downloading need a connection. Saved pages are removed on sign-out and account
+deletion. The service worker (`public/sw.js`) only registers in production builds; test with `npm run build && npx next start`.
+
+After changing `public/sw.js`, browsers pick up the new worker on the next visit (it is served with `no-cache`). Bump `VERSION`
+in that file only if you change what is stored under the cache names.
+
 ## Operations
 
 - **Reminders**: `vercel.json` schedules `/api/cron/reminders` daily at 07:00 UTC; Vercel authenticates it with `CRON_SECRET`.

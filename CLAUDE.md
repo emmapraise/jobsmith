@@ -98,6 +98,15 @@ Glassdoor). A link that can't be read always falls back to the paste box.
   Digests contain only job titles/companies the user typed, never resume content.
 - Downloads must start from `lib/download.ts` (hidden link); never `window.location = downloadUrl` (breaks in Safari).
 
+## PWA / offline rules (don't weaken)
+- Installable via `app/manifest.ts` + generated icons (`/pwa-icon/[size]`). `public/sw.js` is plain JS (no build) and only registers in production.
+- Offline = READ ONLY. The worker saves only the allowlisted page paths in `PAGE_RE` (dashboard, resume, roles, tailor, tracker + detail pages) after a
+  successful, non-redirected HTML load. Never add: settings, profile, editors, auth, `/api/*`, downloads/signed URLs, or any non-GET request.
+- Saved pages contain private data (resume text, notes). They MUST be cleared on sign-out and account deletion: use `SignOutForm` / `clearOfflineData()`
+  (`src/lib/pwa.ts`). A page that redirects (session gone) is removed from the cache. Max 40 pages kept.
+- Pre-saving is gentle on mobile data: at most every 6 h, skipped on Save-Data/2G, ~15 pages; each page's scripts are fetched right after the page.
+- Run `npm run pwa:e2e` (real Chrome) after touching the worker, the shell, or sign-out; `tests/unit/sw.test.ts` covers the worker logic.
+
 ## Conventions
 - Server-only modules start with `import "server-only"`. Authorize in every server action / route handler via
   `requireUser()` close to the data; always scope queries by `userId`.
@@ -116,6 +125,7 @@ Without LLM keys the app runs but parsing/insights show a clear "AI not configur
 
 ## Status log
 - M0: complete (2026-10-09).
+- PWA: installable + offline reading (2026-10-09). Production URL: https://getjobsmith.vercel.app
 - M3: complete (2026-10-09). Board + detail + prompts + opt-in email digest; verified in the browser and with DB integration tests.
 - M2: complete (2026-10-09). Verified against a real OpenAI key (gpt-4.1); PDF/DOCX text round-trips in tests.
 - M1: complete (2026-10-09). Stubbed or unverified items are listed in the end-of-milestone summary; update this line as they land.

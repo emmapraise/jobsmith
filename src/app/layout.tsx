@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { PwaRegister } from "@/components/pwa/pwa-register";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -15,11 +16,19 @@ export const metadata: Metadata = {
   description:
     "Upload one master resume. Jobsmith shows the roles you fit, tailors your resume to each job without inventing anything, and tracks every application. Free.",
   robots: { index: true, follow: true },
+  applicationName: "Jobsmith",
+  appleWebApp: { capable: true, title: "Jobsmith", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
+  icons: {
+    icon: [{ url: "/pwa-icon/32", sizes: "32x32", type: "image/png" }, { url: "/pwa-icon/192", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/pwa-icon/180", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover", // lets env(safe-area-inset-*) work on notched phones in the installed app
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fbf8f1" },
     { media: "(prefers-color-scheme: dark)", color: "#14171d" },
@@ -40,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         {children}
+        <PwaRegister />
         <Toaster position="top-center" />
       </body>
     </html>

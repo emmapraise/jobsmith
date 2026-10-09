@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
+import { clearOfflineData } from "@/lib/pwa";
 import { deleteAccountAction } from "@/app/(app)/settings/actions";
 import { ErrorState } from "@/components/states";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -41,6 +42,7 @@ export function DeleteAccount({ email }: { email: string }) {
             disabled={!matches || pending}
             onClick={() =>
               start(async () => {
+                await clearOfflineData(); // the account (and anything saved from it) is going away
                 const r = await deleteAccountAction(typed);
                 if (r && !r.ok) setError(r.message);
               })

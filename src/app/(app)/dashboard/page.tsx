@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Check, Circle } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { InstallBanner } from "@/components/pwa/install-prompt";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/session";
 import { getProfile } from "@/lib/profile/repo";
@@ -101,6 +102,7 @@ export default async function DashboardPage() {
         description={next ? "Here’s the quickest path to a resume that fits the roles you want." : "Your profile is ready. Tailoring to specific jobs comes next."}
       />
 
+      <InstallBanner />
       {due.length > 0 && <div className="mb-6"><Attention items={due.map(toView)} now={now.toISOString()} compact /></div>}
 
       {next ? (
