@@ -26,7 +26,7 @@ async function main() {
     const job = await parseJob(jobText, cfg);
     console.log("QUESTIONS:", job.applicationQuestions);
     const profile = { ...emptyProfile(), seniority: "senior" as const, needsVisaSponsorship: true, salaryMin: 70000, salaryCurrency: "GBP", salaryPeriod: "year" as const };
-    for (const a of await draftAnswers(job.applicationQuestions ?? [], resume, profile, job, cfg)) console.log(`\nQ: ${a.question}\nA: ${a.answer || "(withheld)"}`);
+    for (const a of await draftAnswers((job.applicationQuestions ?? []).map((question, i) => ({ question, notes: i === 1 ? "i fixed slow payment stuff, made it way faster by caching, used redis and cut latency a lot, team was happy" : i === 4 ? "I ran a Kafka consumer group for order events at a side project for 1 year" : "" })), resume, profile, job, cfg)) console.log(`\nQ: ${a.question}\nA: ${a.answer || "(withheld)"}`);
     return;
   }
 

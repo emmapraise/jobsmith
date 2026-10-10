@@ -5,12 +5,9 @@ import Google from "next-auth/providers/google";
 import Resend from "next-auth/providers/resend";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db, tables } from "@/lib/db";
+import { emailButton, emailLayout, esc } from "@/lib/email-template";
 import { env } from "@/lib/env";
 import { isAllowedEmail } from "./allowlist";
-
-function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-}
 
 function providers(): Provider[] {
   const e = env();
@@ -41,7 +38,12 @@ function providers(): Provider[] {
             from: provider.from,
             to: identifier,
             subject: "Your Jobsmith sign-in link",
-            html: `<p>Click to sign in to Jobsmith:</p><p><a href="${escapeHtml(url)}">Sign in</a></p><p>This link expires in 24 hours and can be used once. If you didn't request it, ignore this email.</p>`,
+            html: emailLayout({
+              preheader: "Your one-time sign-in link",
+              heading: "Sign in to Jobsmith",
+              body: `<p style="margin:0">Tap the button to sign in. The link works once and expires in 24 hours.</p>${emailButton("Sign in", url)}<p style="margin:0;font-size:13px;color:#6b7280">Button not working? Paste this link into your browser:<br><span style="word-break:break-all">${esc(url)}</span></p>`,
+              footer: "You got this because someone asked to sign in to Jobsmith with this address. If it wasn't you, ignore this email and nothing happens.",
+            }),
             text: `Sign in to Jobsmith: ${url}\n\nThis link expires in 24 hours and can be used once. If you didn't request it, ignore this email.`,
           }),
         });

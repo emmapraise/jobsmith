@@ -3,7 +3,7 @@ import { STAGE_LABEL } from "./stages";
 
 export type DigestItem = { id: string; company: string; title: string; status: Stage; followUpDue: boolean; promptDue: boolean; daysInStage: number };
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+import { emailButton, emailLayout, esc } from "@/lib/email-template";
 
 const reason = (i: DigestItem) =>
   [i.followUpDue && "time to follow up", i.promptDue && (i.status === "saved" ? `saved ${i.daysInStage} days ago, still planning to apply?` : `no update for ${i.daysInStage} days, any news?`)].filter(Boolean).join("; ");
@@ -22,8 +22,15 @@ export function buildDigest(items: DigestItem[], appUrl: string): { subject: str
     "",
     "You get at most one of these a day, and only when something needs attention. Turn them off in Settings.",
   ].join("\n");
-  const html = `<p>Here's what needs a look in your Jobsmith tracker:</p><ul>${items
-    .map((i) => `<li><a href="${esc(link(i.id))}"><strong>${esc(i.title)}</strong> at ${esc(i.company)}</a> (${esc(STAGE_LABEL[i.status])}): ${esc(reason(i))}</li>`)
-    .join("")}</ul><p><a href="${esc(appUrl.replace(/\/$/, ""))}/tracker">Open your tracker</a></p><p style="color:#666;font-size:12px">You get at most one of these a day, and only when something needs attention. Turn them off in Settings.</p>`;
+  const root = appUrl.replace(/\/$/, "");
+  const rows = items
+    .map((i) => `<tr><td style="padding:12px 0;border-top:1px solid #eee"><a href="${esc(link(i.id))}" style="color:#0b5c5a;font-weight:600;text-decoration:none">${esc(i.title)}</a><br><span style="color:#6b7280">${esc(i.company)} · ${esc(STAGE_LABEL[i.status])}</span><br><span style="font-size:14px">${esc(reason(i))}</span></td></tr>`)
+    .join("");
+  const html = emailLayout({
+    preheader: subject,
+    heading: subject,
+    body: `<p style="margin:0 0 8px">Here's what needs a look in your tracker:</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${rows}</table>${emailButton("Open your tracker", `${root}/tracker`)}`,
+    footer: `You get at most one of these a day, and only when something needs attention. Turn them off in <a href="${esc(root)}/settings" style="color:#6b7280">Settings</a>.`,
+  });
   return { subject, text, html };
 }

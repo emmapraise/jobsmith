@@ -250,8 +250,8 @@ export async function retailorAction(id: string): Promise<ActionResult> {
 
 /* ───────────── Application questions found in the posting ───────────── */
 
-/** Drafts answers to the questions the application asks, from the master resume + profile only. */
-export async function draftAnswersAction(id: string): Promise<ActionResult> {
+/** Drafts answers from the resume + profile; where the user typed their own answer (`notes`), rewords that instead. */
+export async function draftAnswersAction(id: string, notes: Record<string, string> = {}): Promise<ActionResult> {
   try {
     const user = await requireUser();
     const view = await getTailored(user.id, id);
@@ -261,7 +261,7 @@ export async function draftAnswersAction(id: string): Promise<ActionResult> {
     if (limited) return limited;
     const { data: profile } = await getProfile(user.id);
     // Answer from what the candidate will actually send: the tailored resume as it stands.
-    const answers = await draftAnswers(questions, view.content, profile, view.job.parsed, await resolveLlm(user.id));
+    const answers = await draftAnswers(questions.map((q) => ({ question: q, notes: String(notes[q] ?? "").trim().slice(0, 3000) })), view.content, profile, view.job.parsed, await resolveLlm(user.id));
     await saveJobAnswers(user.id, view.job.id, answers);
     revalidatePath(`/tailor/${id}`);
     return { ok: true };
