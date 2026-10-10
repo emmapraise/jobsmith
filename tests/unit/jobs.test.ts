@@ -134,3 +134,13 @@ describe("safeFetchText against a real local server (private guard lifted for th
     await expect(ingestUrl(`${base}/ok`)).rejects.toBeInstanceOf(IngestError);
   });
 });
+
+describe("application form questions", () => {
+  it("keeps form question labels when the page has no structured data", () => {
+    const html = `<html><body><main><h1>Engineer</h1><p>Build things.</p><form><label>Why do you want to work at Acme?</label><input/><label>Name</label></form></main></body></html>`;
+    const r = extractJob(html);
+    expect(r.text).toContain("Application form questions:");
+    expect(r.text).toContain("- Why do you want to work at Acme?");
+    expect(r.text).not.toContain("- Name");
+  });
+});

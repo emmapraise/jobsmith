@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { ApplicationAnswers } from "@/components/tailor/application-answers";
 import { TailorWorkspace } from "@/components/tailor/workspace";
 import { requireUser } from "@/lib/auth/session";
 import { getMasterResume, getVersionContent } from "@/lib/resume/repo";
@@ -40,6 +41,9 @@ export default async function TailoredPage({ params }: { params: Promise<{ id: s
         matchScore={view.matchScore}
         tracked={tracked}
       />
+      {parsed?.applicationQuestions?.length ? (
+        <div className="pb-24"><ApplicationAnswers tailoredId={view.id} questions={parsed.applicationQuestions} answers={parsed.answers ?? []} /></div>
+      ) : null}
     </div>
   );
 }

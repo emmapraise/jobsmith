@@ -8,6 +8,7 @@ const SYSTEM = `You extract structured data from a job posting. You are a faithf
 - keywords: up to 25 exact terms from the posting that an applicant-tracking system would match: technologies, tools, methods, domain terms, role titles. Copy their spelling exactly as written. No generic words ("team", "passion").
 - responsibilities: up to 8 short phrases.
 - visaSponsorship: "offered" only if the posting says sponsorship/relocation help is offered, "not_offered" only if it says it is NOT, else "unknown".
+- applicationQuestions: questions the APPLICANT is asked to answer on the application form or in the posting (e.g. "Why do you want to work here?", "Describe a project you are proud of", "Are you authorised to work in the UK?"), verbatim, at most 10. Not interview-style guesses, not the posting's own rhetorical questions. [] if none.
 - summary: two sentences max describing the role.
 - isJobPosting: false if the text is not a job advert (e.g. a login page, error page, article).
 ${UNTRUSTED_NOTICE}`;
@@ -41,6 +42,7 @@ export async function parseJob(text: string, config: LlmConfig, hints: { title?:
     summary: out.summary.trim(),
     keywords,
     responsibilities: out.responsibilities.slice(0, 8),
+    applicationQuestions: [...new Set(out.applicationQuestions.map((q) => q.trim()).filter((q) => q.length > 5))].slice(0, 10),
     requirements: out.requirements.slice(0, 15).map((r, i) => ({ id: `r${i + 1}`, text: r.text.trim(), importance: r.importance, category: r.category })),
   });
 }

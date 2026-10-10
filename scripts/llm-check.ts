@@ -16,6 +16,20 @@ async function main() {
   const models = process.argv.slice(2).length ? process.argv.slice(2) : [e.LLM_MODEL ?? PROVIDER_INFO[e.LLM_PROVIDER].defaultModel];
   const text = await extractResumeText(new Uint8Array(readFileSync("tests/fixtures/sample-resume.pdf")), "pdf");
 
+  if (process.env.ANSWERS) {
+    const { parseJob } = await import("../src/lib/jobs/parse");
+    const { draftAnswers } = await import("../src/lib/jobs/answers");
+    const { emptyProfile } = await import("../src/lib/profile/schema");
+    const cfg = { provider: e.LLM_PROVIDER, model: models[0], apiKey };
+    const resume = await parseResumeText(text, cfg);
+    const jobText = readFileSync("tests/fixtures/sample-job.txt", "utf8") + "\n\nApplication form questions:\n- Why do you want to work at Globex Financial?\n- Describe a technical challenge you solved and how.\n- What is your notice period?\n- Do you require visa sponsorship to work in the UK?\n- Tell us about your Kafka experience.";
+    const job = await parseJob(jobText, cfg);
+    console.log("QUESTIONS:", job.applicationQuestions);
+    const profile = { ...emptyProfile(), seniority: "senior" as const, needsVisaSponsorship: true, salaryMin: 70000, salaryCurrency: "GBP", salaryPeriod: "year" as const };
+    for (const a of await draftAnswers(job.applicationQuestions ?? [], resume, profile, job, cfg)) console.log(`\nQ: ${a.question}\nA: ${a.answer || "(withheld)"}`);
+    return;
+  }
+
   if (process.env.PREP) {
     const { parseJob } = await import("../src/lib/jobs/parse");
     const { generatePrep, evaluateAnswer } = await import("../src/lib/prep/engine");

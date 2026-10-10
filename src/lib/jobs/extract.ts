@@ -90,11 +90,13 @@ export function extractJob(html: string): ExtractedJob {
     }
   }
 
-  // 2. Fallback: main content text
+  // 2. Fallback: main content text. Application forms are dropped, but their question labels are kept.
+  const labels = [...new Set(root.querySelectorAll("form label, form legend").map((n) => clean(n.textContent)).filter((t) => t.length >= 15 && t.length <= 300))].slice(0, 12);
   root.querySelectorAll("script,style,noscript,svg,iframe,nav,header,footer,aside,form,button").forEach((n) => n.remove());
   const main = root.querySelector("main") ?? root.querySelector("article") ?? root.querySelector("body") ?? root;
   const title = str(root.querySelector("title")?.textContent) ?? str(root.querySelector("h1")?.textContent);
-  return { text: htmlToText(main.toString()).slice(0, MAX_CHARS), hints: { title }, structured: false };
+  const text = htmlToText(main.toString()).slice(0, MAX_CHARS);
+  return { text: labels.length ? `${text}\n\nApplication form questions:\n${labels.map((l) => `- ${l}`).join("\n")}` : text, hints: { title }, structured: false };
 }
 
 export const MIN_JOB_CHARS = 300;

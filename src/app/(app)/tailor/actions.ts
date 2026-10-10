@@ -6,6 +6,7 @@ import { actionError, fail, limitOrFail, type ActionResult } from "@/lib/action"
 import { requireUser } from "@/lib/auth/session";
 import { exportToUrl, type ExportFormat } from "@/lib/export/service";
 import { ingestPastedText, ingestUrl, IngestError, type IngestedJob } from "@/lib/jobs/ingest";
+import { draftAnswers } from "@/lib/jobs/answers";
 import { NotAJobError, parseJob } from "@/lib/jobs/parse";
 import { resolveLlm } from "@/lib/llm/user-config";
 import { getProfile } from "@/lib/profile/repo";
@@ -16,7 +17,7 @@ import { resumeContentSchema } from "@/lib/resume/schema";
 import { applyTailorChange, changeState, revertTailorChange } from "@/lib/tailor/changes";
 import { generateTailoring } from "@/lib/tailor/engine";
 import { assertStructureUnchanged, StructureError } from "@/lib/tailor/guard";
-import { addTailoredVersion, createTailored, deleteTailored, freezeCurrent, getTailored, mutateWorking, setVariant } from "@/lib/tailor/repo";
+import { addTailoredVersion, createTailored, deleteTailored, freezeCurrent, getTailored, mutateWorking, saveJobAnswers, setVariant } from "@/lib/tailor/repo";
 import type { Decision, TailorChange } from "@/lib/tailor/types";
 
 /** Regional default: US-only searches → US resume; everything else (UK, Europe, remote) → UK/EU CV. */
@@ -231,6 +232,28 @@ export async function retailorAction(id: string): Promise<ActionResult> {
     const result = await generateTailoring(master.content, view.job.parsed, await resolveLlm(user.id));
     await freezeCurrent(user.id, id);
     await addTailoredVersion(user.id, id, { masterVersion: master.version, content: master.content, changes: result.changes, gaps: result.gaps, analysis: result.analysis, matchScore: result.score });
+    revalidatePath(`/tailor/${id}`);
+    return { ok: true };
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+/* ───────────── Application questions found in the posting ───────────── */
+
+/** Drafts answers to the questions the application asks, from the master resume + profile only. */
+export async function draftAnswersAction(id: string): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const view = await getTailored(user.id, id);
+    const questions = view?.job.parsed?.applicationQuestions ?? [];
+    if (!view?.job.parsed || questions.length === 0) return fail("This job has no application questions.");
+    const limited = await limitOrFail(user.id, ["ai", "aiBurst"]);
+    if (limited) return limited;
+    const { data: profile } = await getProfile(user.id);
+    // Answer from what the candidate will actually send: the tailored resume as it stands.
+    const answers = await draftAnswers(questions, view.content, profile, view.job.parsed, await resolveLlm(user.id));
+    await saveJobAnswers(user.id, view.job.id, answers);
     revalidatePath(`/tailor/${id}`);
     return { ok: true };
   } catch (err) {

@@ -162,3 +162,11 @@ export async function getTailoredVersion(userId: string, id: string, version: nu
   if (!row) return null;
   return { content: resumeContentSchema.parse(row.content), variant: (row.variant === "us" ? "us" : "uk_eu") as "uk_eu" | "us", company: row.company, title: row.title, frozen: Boolean(row.frozen) };
 }
+
+/** Stores drafted application answers on the job (they belong to the job, not to one resume version). */
+export async function saveJobAnswers(userId: string, jobId: string, answers: { question: string; answer: string }[]): Promise<void> {
+  const [j] = await db().select({ parsed: jobs.parsed }).from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.userId, userId))).limit(1);
+  const parsed = parsedJobSchema.safeParse(j?.parsed);
+  if (!parsed.success) return;
+  await db().update(jobs).set({ parsed: { ...parsed.data, answers } }).where(and(eq(jobs.id, jobId), eq(jobs.userId, userId)));
+}

@@ -19,10 +19,15 @@ export const llmJobSchema = z.object({
   ),
   keywords: z.array(z.string()),
   responsibilities: z.array(z.string()),
+  /** Questions the applicant must answer on the application ("Why do you want to work here?"), verbatim. */
+  applicationQuestions: z.array(z.string()),
 });
 
 /** Stored form (jobs.parsed): requirements get stable ids r1..rn. */
-export const parsedJobSchema = llmJobSchema.omit({ requirements: true, isJobPosting: true }).extend({
+export const parsedJobSchema = llmJobSchema.omit({ requirements: true, isJobPosting: true, applicationQuestions: true }).extend({
+  applicationQuestions: z.array(z.string()).optional(),
+  /** Drafted answers (grounded in the resume + profile). The user edits and copies them; nothing is sent anywhere. */
+  answers: z.array(z.object({ question: z.string(), answer: z.string() })).optional(),
   requirements: z.array(
     z.object({
       id: z.string(),
