@@ -29,7 +29,14 @@ async function defaultVariant(userId: string): Promise<"uk_eu" | "us"> {
   return us && !other ? "us" : "uk_eu";
 }
 
-const createSchema = z.object({ mode: z.enum(["url", "paste"]), url: z.string().max(2000).optional(), text: z.string().max(60_000).optional() });
+const httpOnly = (u: string) => /^https?:\/\//i.test(u);
+const createSchema = z.object({
+  mode: z.enum(["url", "paste"]),
+  url: z.string().max(2000).optional(),
+  text: z.string().max(60_000).optional(),
+  /** A job found in Job search: the text came from its source, the link is where the user applies. */
+  listing: z.object({ url: z.string().max(2000).refine(httpOnly), title: z.string().max(200), company: z.string().max(200), location: z.string().max(200) }).optional(),
+});
 
 /** Reads the job (link or pasted text), analyses it, and creates a tailored resume. Takes 20–60s. */
 export async function createTailoringAction(input: z.infer<typeof createSchema>): Promise<ActionResult<{ id: string }>> {
@@ -46,7 +53,9 @@ export async function createTailoringAction(input: z.infer<typeof createSchema>)
 
     let job: IngestedJob;
     try {
-      job = p.data.mode === "url" ? await ingestUrl(p.data.url ?? "") : ingestPastedText(p.data.text ?? "");
+      const l = p.data.listing;
+      job = p.data.mode === "url" ? await ingestUrl(p.data.url ?? "") : ingestPastedText(l ? `Job title: ${l.title}\nCompany: ${l.company}\nLocation: ${l.location}\n\n${p.data.text ?? ""}` : (p.data.text ?? ""));
+      if (l) job = { ...job, url: l.url, source: "search", hints: { title: l.title, company: l.company, location: l.location } };
     } catch (e) {
       if (e instanceof IngestError) return fail(e.message, e.pasteFallback ? "paste_fallback" : "invalid");
       throw e;

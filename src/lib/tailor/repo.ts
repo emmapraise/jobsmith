@@ -72,7 +72,7 @@ export type NewTailoring = {
   masterResumeId: string;
   masterVersion: number;
   variant: "uk_eu" | "us";
-  job: { source: "pasted_text" | "pasted_url"; url: string | null; text: string; parsed: ParsedJob };
+  job: { source: "pasted_text" | "pasted_url" | "search"; url: string | null; text: string; parsed: ParsedJob };
   content: ResumeContent;
   changes: TailorChange[];
   gaps: Gap[];

@@ -16,7 +16,7 @@ job tracker → interview prep → job search.
 2. Tailoring — job link/paste ingestion, tailored resume + change list + match score, side-by-side editor, PDF/DOCX export. **DONE**
 3. Job tracker — Saved/Applied/Screening/Interview/Offer/Rejected, resume version per card, status prompts, reminders. **DONE**
 4. Interview prep — technical/behavioural/system-design questions, practice mode with feedback, company brief. **DONE**
-5. Job search — job APIs/aggregators, remote boards, pasted links; filters (country, remote/relocation, visa); fit score; one-click tailor/save. **Never scrape sites that forbid it.**
+5. Job search — job APIs/aggregators, remote boards, pasted links; filters (country, remote/relocation, visa); fit score; one-click tailor/save. **Never scrape sites that forbid it.** **DONE**
 
 ## Stack (decided — don't re-litigate)
 - Next.js (App Router) + TypeScript (strict), Tailwind v4, shadcn/ui (base-nova / Base UI primitives), lucide icons.
@@ -62,6 +62,7 @@ src/lib/resume/             Zod schema for structured resume, text extraction, p
 src/lib/jobs/               SSRF-safe URL fetch (net.ts), robots.txt, HTML/JSON-LD extraction, ingest (link or paste), LLM job parse
 src/lib/tailor/             typed changes (changes.ts), fact check (factcheck.ts), validation (materialize.ts), LLM verifier (verify.ts),
                             engine (engine.ts), score, gap questions, manual-edit guard (guard.ts), repo (versions; frozen = immutable)
+src/lib/search/             job boards (sources.ts) + filtering/fit ranking (rank.ts)
 src/lib/prep/               interview prep: schema, pure validation (build.ts), LLM engine (engine.ts), context (which resume), repo
 src/lib/tracker/            stage rules (stages.ts), what's due (due.ts), repo (applications + events), opt-in email digest (digest.ts, reminders.ts)
 src/lib/export/             one neutral doc model (model.ts) → PDF (pdfkit) and DOCX (docx); UK/EU CV vs US resume; cached by content hash
@@ -111,9 +112,19 @@ Glassdoor). A link that can't be read always falls back to the paste box.
 - Practice answers/feedback live in `interview_preps.data` (private; deleted with the account). Drafts are in localStorage under `jobsmith:draft:*`
   and are cleared on sign-out. `/prep` pages are on the offline allowlist (read-only); practising needs a connection.
 
+## Job search rules (M5)
+- Sources are public, keyless JSON APIs only (`search/sources.ts`: Arbeitnow, Remotive, Remote OK, Himalayas), shown with the source name and a link to
+  the original; "apply" always goes to the original URL. Never scrape; never touch LinkedIn/Indeed/Glassdoor. Add a source only after reading its terms.
+- Only the keywords the user typed leave the server (to Remotive/Himalayas). Never send resume or profile content to a job board.
+- Fit (`search/rank.ts`) is deterministic and explainable: share of the user's resume skills the listing names (+ title match). Visa/relocation filters
+  match what the text MENTIONS; the UI says "mentions", never "offers". Listings are cached in memory (30-60 min) to stay polite to the APIs.
+- Tailoring from a listing passes the listing text as pasted text with `listing` (url/title/company); the job is stored with source `search`.
+- Tailoring also reads the job's application questions (`applicationQuestions`) and drafts answers (`jobs/answers.ts`) from the tailored resume + profile only;
+  each answer is fact-checked and withheld if it adds a number/tool/name the candidate hasn't shown. `/search` is not on the offline allowlist.
+
 ## PWA / offline rules (don't weaken)
 - Installable via `app/manifest.ts` + generated icons (`/pwa-icon/[size]`). `public/sw.js` is plain JS (no build) and only registers in production.
-- Offline = READ ONLY. The worker saves only the allowlisted page paths in `PAGE_RE` (dashboard, resume, roles, tailor, tracker + detail pages) after a
+- Offline = READ ONLY. The worker saves only the allowlisted page paths in `PAGE_RE` (dashboard, resume, roles, tailor, tracker, prep + detail pages) after a
   successful, non-redirected HTML load. Never add: settings, profile, editors, auth, `/api/*`, downloads/signed URLs, or any non-GET request.
 - Saved pages contain private data (resume text, notes). They MUST be cleared on sign-out and account deletion: use `SignOutForm` / `clearOfflineData()`
   (`src/lib/pwa.ts`). A page that redirects (session gone) is removed from the cache. Max 40 pages kept.
@@ -138,6 +149,7 @@ Without LLM keys the app runs but parsing/insights show a clear "AI not configur
 
 ## Status log
 - M0: complete (2026-10-09).
+- M5: complete (2026-10-10). Search across 4 open boards, fit ranking, filters, tailor/save from a result. Also: application questions drafted while tailoring.
 - M4: complete (2026-10-09). Prep packs, practice with scored feedback, company brief; verified in real Chrome against a real model.
 - PWA: installable + offline reading (2026-10-09). Production URL: https://getjobsmith.vercel.app
 - M3: complete (2026-10-09). Board + detail + prompts + opt-in email digest; verified in the browser and with DB integration tests.

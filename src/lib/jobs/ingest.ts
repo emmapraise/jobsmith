@@ -14,7 +14,7 @@ export class IngestError extends Error {
   }
 }
 
-export type IngestedJob = { text: string; url: string | null; source: "pasted_url" | "pasted_text"; hints: { title?: string; company?: string; location?: string } };
+export type IngestedJob = { text: string; url: string | null; source: "pasted_url" | "pasted_text" | "search"; hints: { title?: string; company?: string; location?: string } };
 
 const MAX_PASTE = 30_000;
 

@@ -9,8 +9,6 @@ import type { CurrentUser } from "@/lib/auth/session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BottomNav, SidebarNav, type Badges } from "./nav";
 
-const SOON = ["Job search"];
-
 export function AppShell({ user, badges, children }: { user: CurrentUser; badges: Badges; children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
@@ -19,17 +17,6 @@ export function AppShell({ user, badges, children }: { user: CurrentUser; badges
         <Logo href="/dashboard" className="px-2" />
         <div className="mt-8">
           <SidebarNav badges={badges} />
-        </div>
-        <div className="mt-8 px-3">
-          <p className="eyebrow">Coming next</p>
-          <ul className="mt-3 space-y-2 text-sm text-ink-muted">
-            {SOON.map((s) => (
-              <li key={s} className="flex items-center gap-2">
-                <span className="size-1.5 rounded-full bg-line-strong" aria-hidden="true" />
-                {s}
-              </li>
-            ))}
-          </ul>
         </div>
         <div className="mt-auto border-t border-line pt-4">
           <p className="truncate px-2 text-sm text-ink-muted" title={user.email}>
